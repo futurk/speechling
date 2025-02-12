@@ -183,7 +183,20 @@ export default function App() {
       const newState = { ...s, isPlaying: !s.isPlaying };
       console.log('Toggle playback - newState.isPlaying:', newState.isPlaying);
 
-      // If playback is starting, call handleAutoPlay after state updates
+      // If stopping, pause audio and clear timers
+      if (!newState.isPlaying) {
+        if (state.sound) {
+          state.sound.pauseAsync(); // Pause the current audio
+        }
+        if (state.translationSound) {
+          state.translationSound.pauseAsync(); // Pause the translation audio
+        }
+        if (timerRef.current) {
+          clearTimeout(timerRef.current); // Clear any pending timers
+        }
+      }
+
+      // If starting, call handleAutoPlay after state updates
       if (newState.isPlaying) {
         setTimeout(() => {
           handleAutoPlay();
