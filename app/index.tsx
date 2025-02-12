@@ -66,6 +66,18 @@ export default function App() {
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const isMounted = useRef(true);
+  const sentenceDelayRef = useRef(state.sentenceDelay);
+  const translationDelayRef = useRef(state.translationDelay);
+
+  const handleSentenceDelayChange = (value: number) => {
+    sentenceDelayRef.current = value; // Update ref
+    setState(s => ({ ...s, sentenceDelay: value })); // Update state
+  };
+
+  const handleTranslationDelayChange = (value: number) => {
+    translationDelayRef.current = value; // Update ref
+    setState(s => ({ ...s, translationDelay: value })); // Update state
+  };
 
   useEffect(() => {
     // fetchSentences();
@@ -180,10 +192,10 @@ export default function App() {
         await playAudio(currentSentence.audios[0].id);
       }
 
-      // Wait for sentence delay (starts AFTER audio finishes)
-      console.log('Starting sentence delay');
+      // Wait for sentence delay (using ref value)
+      console.log('Starting sentence delay:', sentenceDelayRef.current);
       await new Promise(resolve => {
-        timerRef.current = setTimeout(resolve, state.sentenceDelay * 1000);
+        timerRef.current = setTimeout(resolve, sentenceDelayRef.current * 1000);
       });
 
       // Play translation audio and wait for it to finish
@@ -192,10 +204,10 @@ export default function App() {
         await playAudio(translation.audios[0].id, true);
       }
 
-      // Wait for translation delay (starts AFTER audio finishes)
-      console.log('Starting translation delay');
+      // Wait for translation delay (using ref value)
+      console.log('Starting translation delay:', translationDelayRef.current);
       await new Promise(resolve => {
-        timerRef.current = setTimeout(resolve, state.translationDelay * 1000);
+        timerRef.current = setTimeout(resolve, translationDelayRef.current * 1000);
       });
 
       if (isMounted.current && state.isPlaying) {
@@ -328,9 +340,7 @@ export default function App() {
                 maximumValue={10}
                 step={1}
                 value={state.sentenceDelay}
-                onValueChange={(value: number) =>
-                  setState(s => ({ ...s, sentenceDelay: value }))
-                }
+                onValueChange={handleSentenceDelayChange}
                 style={styles.slider}
               />
             </View>
@@ -342,9 +352,7 @@ export default function App() {
                 maximumValue={10}
                 step={1}
                 value={state.translationDelay}
-                onValueChange={(value: number) =>
-                  setState(s => ({ ...s, translationDelay: value }))
-                }
+                onValueChange={handleTranslationDelayChange}
                 style={styles.slider}
               />
             </View>
