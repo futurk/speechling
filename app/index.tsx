@@ -49,6 +49,7 @@ const LANGUAGES = {
 };
 
 export default function App() {
+  const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://tatoeba.org/en/api_v0/search';
   const [state, setState] = useState<AppState>({
     fromLang: 'deu',
     toLang: 'eng',
@@ -80,8 +81,6 @@ export default function App() {
       fetchSentences();
     }
   }, [state.fromLang, state.toLang]);
-
-  const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
   const fetchSentences = async () => {
     try {
