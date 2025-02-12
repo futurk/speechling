@@ -55,7 +55,7 @@ export default function App() {
     toLang: 'eng',
     sentences: [],
     currentIndex: 0,
-    isLoading: true,
+    isLoading: false,
     isPlaying: false,
     showTranslation: false,
     sentenceDelay: 3,
@@ -68,7 +68,7 @@ export default function App() {
   const isMounted = useRef(true);
 
   useEffect(() => {
-    fetchSentences();
+    // fetchSentences();
     return () => {
       isMounted.current = false;
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -78,7 +78,7 @@ export default function App() {
 
   useEffect(() => {
     if (isMounted.current && !state.isLoading) {
-      fetchSentences();
+      // fetchSentences();
     }
   }, [state.fromLang, state.toLang]);
 
@@ -130,47 +130,66 @@ export default function App() {
   };
 
   const handleAutoPlay = async () => {
-    if (!state.isPlaying || !state.sentences.length) return;
+    console.log('Starting auto-play');
+    if (!state.sentences.length) return; // Only check for sentences
 
-    const currentSentence = state.sentences[state.currentIndex];
-    const translation = currentSentence.translations[0]?.[0];
+    try {
+      const currentSentence = state.sentences[state.currentIndex];
+      const translation = currentSentence.translations[0]?.[0];
 
-    if (currentSentence.audios?.length) {
-      await playAudio(currentSentence.audios[0].id);
-    }
-
-    await new Promise(resolve => {
-      timerRef.current = setTimeout(resolve, state.sentenceDelay * 1000);
-    });
-
-    if (translation?.audios?.length) {
-      await playAudio(translation.audios[0].id, true);
-    }
-
-    await new Promise(resolve => {
-      timerRef.current = setTimeout(resolve, state.translationDelay * 1000);
-    });
-
-    if (isMounted.current) {
-      const nextIndex = (state.currentIndex + 1) % state.sentences.length;
-      setState(s => ({
-        ...s,
-        currentIndex: nextIndex,
-        showTranslation: false
-      }));
-
-      if (nextIndex === state.sentences.length - 1) {
-        fetchSentences();
+      if (currentSentence.audios?.length) {
+        console.log('Playing original audio');
+        await playAudio(currentSentence.audios[0].id);
       }
 
-      handleAutoPlay();
+      await new Promise(resolve => {
+        timerRef.current = setTimeout(resolve, state.sentenceDelay * 1000);
+      });
+
+      if (translation?.audios?.length) {
+        console.log('Playing translation audio');
+        await playAudio(translation.audios[0].id, true);
+      }
+
+      await new Promise(resolve => {
+        timerRef.current = setTimeout(resolve, state.translationDelay * 1000);
+      });
+
+      if (isMounted.current) {
+        const nextIndex = (state.currentIndex + 1) % state.sentences.length;
+        setState(s => ({
+          ...s,
+          currentIndex: nextIndex,
+          showTranslation: false
+        }));
+
+        if (nextIndex === state.sentences.length - 1) {
+          fetchSentences();
+        }
+
+        // Continue auto-play if still playing
+        if (state.isPlaying) {
+          handleAutoPlay();
+        }
+      }
+    } catch (error) {
+      console.error('Error in auto-play:', error);
+      setState(s => ({ ...s, isPlaying: false }));
     }
   };
 
   const togglePlayback = () => {
     setState(s => {
       const newState = { ...s, isPlaying: !s.isPlaying };
-      if (newState.isPlaying) handleAutoPlay();
+      console.log('Toggle playback - newState.isPlaying:', newState.isPlaying);
+
+      // If playback is starting, call handleAutoPlay after state updates
+      if (newState.isPlaying) {
+        setTimeout(() => {
+          handleAutoPlay();
+        }, 0); // Use setTimeout to ensure state is updated
+      }
+
       return newState;
     });
   };
