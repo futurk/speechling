@@ -46,9 +46,7 @@ const LANGUAGES = {
   spa: 'Spanish',
   ita: 'Italian',
   jpn: 'Japanese',
-} as const;
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+};
 
 export default function App() {
   const [state, setState] = useState<AppState>({
@@ -68,23 +66,27 @@ export default function App() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const isMounted = useRef(true);
 
-  // Update your initial useEffect to handle first load properly
   useEffect(() => {
     fetchSentences();
-
     return () => {
       isMounted.current = false;
       if (timerRef.current) clearTimeout(timerRef.current);
       stopAudio();
     };
-  }, [state.fromLang, state.toLang]); // Add language dependencies
+  }, []);
 
-  // Update your fetchSentences function with proper error handling:
+  useEffect(() => {
+    if (isMounted.current && !state.isLoading) {
+      fetchSentences();
+    }
+  }, [state.fromLang, state.toLang]);
+
+  const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
   const fetchSentences = async () => {
     try {
       setState(s => ({ ...s, isLoading: true }));
-
-      const response = await axios.get(API_URL, {
+      const response = await axios.get<{ results: Sentence[] }>(API_URL, {
         params: {
           from: state.fromLang,
           to: state.toLang,
@@ -93,30 +95,21 @@ export default function App() {
           trans_has_audio: 'yes',
           sort: 'random',
           page: 1
-        },
-        timeout: 10000 // Add timeout
+        }
       });
-
-      if (!response.data?.results) {
-        throw new Error('Invalid API response');
-      }
 
       if (isMounted.current) {
         setState(s => ({
           ...s,
-          sentences: response.data.results as Sentence[],
+          sentences: response.data.results,
           isLoading: false,
+          currentIndex: 0,
+          isPlaying: false
         }));
       }
     } catch (error) {
-      console.error('API Error:', error);
-      if (isMounted.current) {
-        setState(s => ({
-          ...s,
-          isLoading: false,
-          sentences: [] // Reset sentences
-        }));
-      }
+      console.error(error);
+      setState(s => ({ ...s, isLoading: false }));
     }
   };
 
@@ -202,8 +195,8 @@ export default function App() {
     );
   }
 
-  const currentSentence = state.sentences[state.currentIndex];
-  const translation = currentSentence?.translations?.[0]?.[0];
+  const currentSentence = state.sentences[state.currentIndex] || {};
+  const translation = currentSentence.translations?.[0]?.[0];
 
   return (
     <View style={styles.container}>
@@ -211,7 +204,9 @@ export default function App() {
         <Picker
           selectedValue={state.fromLang}
           style={styles.picker}
-          onValueChange={(value: LanguageCode) => setState(s => ({ ...s, fromLang: value }))}
+          onValueChange={(value: LanguageCode) =>
+            setState(s => ({ ...s, fromLang: value }))
+          }
         >
           {Object.entries(LANGUAGES).map(([code, name]) => (
             <Picker.Item
@@ -225,7 +220,9 @@ export default function App() {
         <Picker
           selectedValue={state.toLang}
           style={styles.picker}
-          onValueChange={(value: LanguageCode) => setState(s => ({ ...s, toLang: value }))}
+          onValueChange={(value: LanguageCode) =>
+            setState(s => ({ ...s, toLang: value }))
+          }
         >
           {Object.entries(LANGUAGES).map(([code, name]) => (
             <Picker.Item
@@ -272,7 +269,9 @@ export default function App() {
                 maximumValue={10}
                 step={1}
                 value={state.sentenceDelay}
-                onValueChange={value => setState(s => ({ ...s, sentenceDelay: value }))}
+                onValueChange={(value: number) =>
+                  setState(s => ({ ...s, sentenceDelay: value }))
+                }
                 style={styles.slider}
               />
             </View>
@@ -284,7 +283,9 @@ export default function App() {
                 maximumValue={10}
                 step={1}
                 value={state.translationDelay}
-                onValueChange={value => setState(s => ({ ...s, translationDelay: value }))}
+                onValueChange={(value: number) =>
+                  setState(s => ({ ...s, translationDelay: value }))
+                }
                 style={styles.slider}
               />
             </View>
