@@ -1,63 +1,200 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  ActivityIndicator,
+  Platform
+} from 'react-native';
+import Slider from '@react-native-community/slider';
+import { Picker } from '@react-native-picker/picker';
 import { Audio } from 'expo-av';
 import axios from 'axios';
 
+type LanguageCode = keyof typeof LANGUAGES;
+
+interface Sentence {
+  id: number;
+  text: string;
+  lang: string;
+  audios: Array<{ id: number }>;
+  translations: Array<Array<{
+    text: string;
+    audios: Array<{ id: number }>;
+  }>>;
+}
+
+interface AppState {
+  fromLang: LanguageCode;
+  toLang: LanguageCode;
+  sentences: Sentence[];
+  currentIndex: number;
+  isLoading: boolean;
+  isPlaying: boolean;
+  showTranslation: boolean;
+  sentenceDelay: number;
+  translationDelay: number;
+  sound: Audio.Sound | null;
+  translationSound: Audio.Sound | null;
+}
+
+const LANGUAGES = {
+  deu: 'German',
+  eng: 'English',
+  fra: 'French',
+  spa: 'Spanish',
+  ita: 'Italian',
+  jpn: 'Japanese',
+} as const;
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
 export default function App() {
-  const [sentences, setSentences] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [showTranslation, setShowTranslation] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [sound, setSound] = useState(null);
+  const [state, setState] = useState<AppState>({
+    fromLang: 'deu',
+    toLang: 'eng',
+    sentences: [],
+    currentIndex: 0,
+    isLoading: true,
+    isPlaying: false,
+    showTranslation: false,
+    sentenceDelay: 3,
+    translationDelay: 2,
+    sound: null,
+    translationSound: null,
+  });
 
-  const API_URL = process.env.EXPO_PUBLIC_API_URL;
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const isMounted = useRef(true);
 
+  // Update your initial useEffect to handle first load properly
+  useEffect(() => {
+    fetchSentences();
+
+    return () => {
+      isMounted.current = false;
+      if (timerRef.current) clearTimeout(timerRef.current);
+      stopAudio();
+    };
+  }, [state.fromLang, state.toLang]); // Add language dependencies
+
+  // Update your fetchSentences function with proper error handling:
   const fetchSentences = async () => {
     try {
+      setState(s => ({ ...s, isLoading: true }));
+
       const response = await axios.get(API_URL, {
         params: {
-          from: 'deu',
-          to: 'eng',
-          trans_to: 'eng',
+          from: state.fromLang,
+          to: state.toLang,
+          trans_to: state.toLang,
           has_audio: 'yes',
           trans_has_audio: 'yes',
           sort: 'random',
           page: 1
-        }
+        },
+        timeout: 10000 // Add timeout
       });
-      setSentences(response.data.results);
-      setIsLoading(false);
+
+      if (!response.data?.results) {
+        throw new Error('Invalid API response');
+      }
+
+      if (isMounted.current) {
+        setState(s => ({
+          ...s,
+          sentences: response.data.results as Sentence[],
+          isLoading: false,
+        }));
+      }
     } catch (error) {
-      console.error(error);
-      setIsLoading(false);
+      console.error('API Error:', error);
+      if (isMounted.current) {
+        setState(s => ({
+          ...s,
+          isLoading: false,
+          sentences: [] // Reset sentences
+        }));
+      }
     }
   };
 
-  useEffect(() => {
-    fetchSentences();
-  }, []);
+  const stopAudio = async () => {
+    if (state.sound) await state.sound.unloadAsync();
+    if (state.translationSound) await state.translationSound.unloadAsync();
+    setState(s => ({ ...s, sound: null, translationSound: null }));
+  };
 
-  const playAudio = async (audioId) => {
-    if (sound) {
-      await sound.unloadAsync();
-    }
+  const playAudio = async (audioId: number, isTranslation = false) => {
+    await stopAudio();
     const audioUrl = `https://tatoeba.org/audio/download/${audioId}`;
-    const { sound: newSound } = await Audio.Sound.createAsync(
-      { uri: audioUrl }
-    );
-    setSound(newSound);
-    await newSound.playAsync();
-  };
+    const { sound } = await Audio.Sound.createAsync({ uri: audioUrl });
 
-  const handleNext = () => {
-    setShowTranslation(false);
-    setCurrentIndex(prev => (prev + 1) % sentences.length);
-    if (currentIndex === sentences.length - 2) {
-      fetchSentences();
+    if (isMounted.current) {
+      setState(s => ({ ...s, [isTranslation ? 'translationSound' : 'sound']: sound }));
+      await sound.playAsync();
     }
   };
 
-  if (isLoading) {
+  const handleAutoPlay = async () => {
+    if (!state.isPlaying || !state.sentences.length) return;
+
+    const currentSentence = state.sentences[state.currentIndex];
+    const translation = currentSentence.translations[0]?.[0];
+
+    if (currentSentence.audios?.length) {
+      await playAudio(currentSentence.audios[0].id);
+    }
+
+    await new Promise(resolve => {
+      timerRef.current = setTimeout(resolve, state.sentenceDelay * 1000);
+    });
+
+    if (translation?.audios?.length) {
+      await playAudio(translation.audios[0].id, true);
+    }
+
+    await new Promise(resolve => {
+      timerRef.current = setTimeout(resolve, state.translationDelay * 1000);
+    });
+
+    if (isMounted.current) {
+      const nextIndex = (state.currentIndex + 1) % state.sentences.length;
+      setState(s => ({
+        ...s,
+        currentIndex: nextIndex,
+        showTranslation: false
+      }));
+
+      if (nextIndex === state.sentences.length - 1) {
+        fetchSentences();
+      }
+
+      handleAutoPlay();
+    }
+  };
+
+  const togglePlayback = () => {
+    setState(s => {
+      const newState = { ...s, isPlaying: !s.isPlaying };
+      if (newState.isPlaying) handleAutoPlay();
+      return newState;
+    });
+  };
+
+  const changeIndex = (direction: number) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    stopAudio();
+    setState(s => ({
+      ...s,
+      currentIndex: Math.max(0, Math.min(s.sentences.length - 1, s.currentIndex + direction)),
+      isPlaying: false,
+      showTranslation: false
+    }));
+  };
+
+  if (state.isLoading) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#0000ff" />
@@ -65,59 +202,108 @@ export default function App() {
     );
   }
 
-  if (!sentences.length) {
-    return (
-      <View style={styles.container}>
-        <Text>No sentences found</Text>
-      </View>
-    );
-  }
-
-  const currentSentence = sentences[currentIndex];
+  const currentSentence = state.sentences[state.currentIndex];
+  const translation = currentSentence?.translations?.[0]?.[0];
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>German Listening Practice</Text>
-
-      <View style={styles.card}>
-        <Text style={styles.germanText}>
-          {currentSentence.text}
-        </Text>
-
-        <TouchableOpacity
-          style={styles.audioButton}
-          onPress={() => playAudio(currentSentence.audios[0].id)}
+      <View style={styles.languageSelector}>
+        <Picker
+          selectedValue={state.fromLang}
+          style={styles.picker}
+          onValueChange={(value: LanguageCode) => setState(s => ({ ...s, fromLang: value }))}
         >
-          <Text style={styles.buttonText}>▶ Play Audio</Text>
-        </TouchableOpacity>
+          {Object.entries(LANGUAGES).map(([code, name]) => (
+            <Picker.Item
+              key={code}
+              label={`Learn: ${name}`}
+              value={code}
+            />
+          ))}
+        </Picker>
 
-        <TouchableOpacity
-          style={styles.toggleButton}
-          onPress={() => setShowTranslation(!showTranslation)}
+        <Picker
+          selectedValue={state.toLang}
+          style={styles.picker}
+          onValueChange={(value: LanguageCode) => setState(s => ({ ...s, toLang: value }))}
         >
-          <Text style={styles.buttonText}>
-            {showTranslation ? 'Hide Translation' : 'Show Translation'}
-          </Text>
-        </TouchableOpacity>
-
-        {showTranslation && (
-          <View style={styles.translationContainer}>
-            <Text style={styles.translationTitle}>Translations:</Text>
-            {currentSentence.translations[0]?.map((translation, index) => (
-              <Text key={index} style={styles.translationText}>
-                • {translation.text}
-              </Text>
-            ))}
-          </View>
-        )}
+          {Object.entries(LANGUAGES).map(([code, name]) => (
+            <Picker.Item
+              key={code}
+              label={`Translate: ${name}`}
+              value={code}
+            />
+          ))}
+        </Picker>
       </View>
 
       <TouchableOpacity
-        style={styles.nextButton}
-        onPress={handleNext}
+        style={styles.fetchButton}
+        onPress={fetchSentences}
       >
-        <Text style={styles.buttonText}>Next Sentence →</Text>
+        <Text style={styles.buttonText}>Load Sentences</Text>
       </TouchableOpacity>
+
+      {currentSentence.text && (
+        <View style={styles.card}>
+          <Text style={styles.sentenceText}>{currentSentence.text}</Text>
+
+          <View style={styles.controls}>
+            <TouchableOpacity onPress={() => changeIndex(-1)}>
+              <Text style={styles.controlText}>⏮</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={togglePlayback}>
+              <Text style={styles.controlText}>
+                {state.isPlaying ? '⏸' : '▶'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => changeIndex(1)}>
+              <Text style={styles.controlText}>⏭</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.delayControls}>
+            <View style={styles.delayGroup}>
+              <Text>After Sentence: {state.sentenceDelay}s</Text>
+              <Slider
+                minimumValue={1}
+                maximumValue={10}
+                step={1}
+                value={state.sentenceDelay}
+                onValueChange={value => setState(s => ({ ...s, sentenceDelay: value }))}
+                style={styles.slider}
+              />
+            </View>
+
+            <View style={styles.delayGroup}>
+              <Text>After Translation: {state.translationDelay}s</Text>
+              <Slider
+                minimumValue={1}
+                maximumValue={10}
+                step={1}
+                value={state.translationDelay}
+                onValueChange={value => setState(s => ({ ...s, translationDelay: value }))}
+                style={styles.slider}
+              />
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.translationButton}
+            onPress={() => setState(s => ({ ...s, showTranslation: !s.showTranslation }))}
+          >
+            <Text style={styles.buttonText}>
+              {state.showTranslation ? 'Hide Translation' : 'Show Translation'}
+            </Text>
+          </TouchableOpacity>
+
+          {state.showTranslation && translation?.text && (
+            <Text style={styles.translationText}>{translation.text}</Text>
+          )}
+        </View>
+      )}
     </View>
   );
 }
@@ -125,71 +311,73 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
-    alignItems: 'center',
-    justifyContent: 'center',
     padding: 20,
+    backgroundColor: '#f5f5f5',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 30,
-    color: '#2c3e50',
+  languageSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  picker: {
+    height: 50,
+    width: '48%',
   },
   card: {
     backgroundColor: 'white',
     borderRadius: 15,
     padding: 20,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
     elevation: 5,
-    marginBottom: 20,
   },
-  germanText: {
+  controls: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 20,
+  },
+  controlText: {
+    fontSize: 32,
+    color: '#2c3e50',
+  },
+  sentenceText: {
     fontSize: 20,
-    marginBottom: 20,
     textAlign: 'center',
+    marginVertical: 15,
     color: '#34495e',
   },
-  audioButton: {
+  translationText: {
+    fontSize: 16,
+    color: '#7f8c8d',
+    textAlign: 'center',
+    marginTop: 15,
+    fontStyle: 'italic',
+  },
+  delayControls: {
+    marginVertical: 15,
+  },
+  delayGroup: {
+    marginBottom: 15,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  fetchButton: {
     backgroundColor: '#3498db',
     padding: 15,
     borderRadius: 10,
-    marginBottom: 10,
+    marginBottom: 15,
     alignItems: 'center',
   },
-  toggleButton: {
+  translationButton: {
     backgroundColor: '#27ae60',
     padding: 15,
     borderRadius: 10,
-    marginBottom: 20,
     alignItems: 'center',
-  },
-  nextButton: {
-    backgroundColor: '#e67e22',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
+    marginTop: 10,
   },
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
-  },
-  translationContainer: {
-    borderTopWidth: 1,
-    borderTopColor: '#ecf0f1',
-    paddingTop: 15,
-  },
-  translationTitle: {
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#7f8c8d',
-  },
-  translationText: {
-    color: '#2c3e50',
-    marginBottom: 5,
   },
 });
