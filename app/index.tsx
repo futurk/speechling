@@ -64,7 +64,7 @@ export default function App() {
     translationSound: null,
   });
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<number | null>(null); // Use `number` instead of `Timeout`
   const isMounted = useRef(true);
   const sentenceDelayRef = useRef(state.sentenceDelay);
   const translationDelayRef = useRef(state.translationDelay);
@@ -99,8 +99,9 @@ export default function App() {
       handleAutoPlay(state.currentIndex); // Pass the current index
     } else {
       // Clear timers and pause audio when stopping
-      if (timerRef.current) {
+      if (timerRef.current !== null) {
         clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
       if (state.sound) {
         state.sound.pauseAsync();
@@ -166,6 +167,7 @@ export default function App() {
       // Return a promise that resolves when playback finishes
       return new Promise((resolve) => {
         sound.setOnPlaybackStatusUpdate((status) => {
+          if (!status.isLoaded) return; // Skip if status is not loaded
           if (status.didJustFinish) {
             console.log('Audio playback finished');
             resolve();
@@ -195,7 +197,7 @@ export default function App() {
       // Wait for sentence delay (using ref value)
       console.log('Starting sentence delay:', sentenceDelayRef.current);
       await new Promise(resolve => {
-        timerRef.current = setTimeout(resolve, sentenceDelayRef.current * 1000);
+        timerRef.current = setTimeout(resolve, sentenceDelayRef.current * 1000) as unknown as number;
       });
 
       // Play translation audio and wait for it to finish
@@ -207,7 +209,7 @@ export default function App() {
       // Wait for translation delay (using ref value)
       console.log('Starting translation delay:', translationDelayRef.current);
       await new Promise(resolve => {
-        timerRef.current = setTimeout(resolve, translationDelayRef.current * 1000);
+        timerRef.current = setTimeout(resolve, sentenceDelayRef.current * 1000) as unknown as number;
       });
 
       if (isMounted.current && state.isPlaying) {
@@ -240,7 +242,10 @@ export default function App() {
   };
 
   const changeIndex = (direction: number) => {
-    clearTimeout(timerRef.current); // Clear any pending timers
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
     stopAudio(); // Stop any currently playing audio
 
     setState(s => {
