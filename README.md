@@ -5,3 +5,6 @@ https://tatoeba.org/en/sentences/search?from=deu&has_audio=yes&orphans=no&sort=r
 
 https://tatoeba.org/en/sentences
 https://tatoeba.org/eng/api_v0
+
+https://docs.expo.dev/eas/hosting/get-started/
+https://speechling--w1qb9i8ihz.expo.app/

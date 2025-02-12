@@ -46,6 +46,7 @@ const LANGUAGES = {
   spa: 'Spanish',
   ita: 'Italian',
   jpn: 'Japanese',
+  tur: 'Turkish',
 };
 
 export default function App() {
@@ -55,7 +56,7 @@ export default function App() {
     toLang: 'eng',
     sentences: [],
     currentIndex: 0,
-    isLoading: false,
+    isLoading: true, // change to false when testing
     isPlaying: false,
     showTranslation: false,
     sentenceDelay: 3,
@@ -80,7 +81,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    // fetchSentences();
+    fetchSentences(); // comment when testing
     return () => {
       isMounted.current = false;
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -90,7 +91,7 @@ export default function App() {
 
   useEffect(() => {
     if (isMounted.current && !state.isLoading) {
-      // fetchSentences();
+      fetchSentences(); // comment when testing
     }
   }, [state.fromLang, state.toLang]);
 
@@ -120,7 +121,7 @@ export default function App() {
           from: state.fromLang,
           to: state.toLang,
           trans_to: state.toLang,
-          word_count_min: 10, // remove
+          word_count_min: 10, // remove on production
           has_audio: 'yes',
           trans_has_audio: 'yes',
           sort: 'random',
@@ -287,7 +288,7 @@ export default function App() {
           {Object.entries(LANGUAGES).map(([code, name]) => (
             <Picker.Item
               key={code}
-              label={`Learn: ${name}`}
+              label={`Practice: ${name}`}
               value={code}
             />
           ))}
