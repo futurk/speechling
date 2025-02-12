@@ -82,6 +82,23 @@ export default function App() {
     }
   }, [state.fromLang, state.toLang]);
 
+  useEffect(() => {
+    if (state.isPlaying) {
+      handleAutoPlay(state.currentIndex); // Pass the current index
+    } else {
+      // Clear timers and pause audio when stopping
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+      if (state.sound) {
+        state.sound.pauseAsync();
+      }
+      if (state.translationSound) {
+        state.translationSound.pauseAsync();
+      }
+    }
+  }, [state.isPlaying]); // Trigger when isPlaying changes
+
   const fetchSentences = async () => {
     try {
       setState(s => ({ ...s, isLoading: true }));
@@ -90,6 +107,7 @@ export default function App() {
           from: state.fromLang,
           to: state.toLang,
           trans_to: state.toLang,
+          word_count_min: 10, // remove
           has_audio: 'yes',
           trans_has_audio: 'yes',
           sort: 'random',
@@ -118,59 +136,86 @@ export default function App() {
     setState(s => ({ ...s, sound: null, translationSound: null }));
   };
 
-  const playAudio = async (audioId: number, isTranslation = false) => {
+  const playAudio = async (audioId: number, isTranslation = false): Promise<void> => {
     await stopAudio();
     const audioUrl = `https://tatoeba.org/audio/download/${audioId}`;
-    const { sound } = await Audio.Sound.createAsync({ uri: audioUrl });
+    console.log('Attempting to play audio from URL:', audioUrl);
 
-    if (isMounted.current) {
-      setState(s => ({ ...s, [isTranslation ? 'translationSound' : 'sound']: sound }));
-      await sound.playAsync();
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: audioUrl },
+        { shouldPlay: true }
+      );
+
+      if (isMounted.current) {
+        setState(s => ({ ...s, [isTranslation ? 'translationSound' : 'sound']: sound }));
+      }
+
+      // Return a promise that resolves when playback finishes
+      return new Promise((resolve) => {
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (status.didJustFinish) {
+            console.log('Audio playback finished');
+            resolve();
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      throw error;
     }
   };
 
-  const handleAutoPlay = async () => {
-    console.log('Starting auto-play');
-    if (!state.sentences.length) return; // Only check for sentences
+  const handleAutoPlay = async (currentIndex: number) => {
+    console.log('Starting auto-play for index:', currentIndex);
+    if (!state.sentences.length || !state.isPlaying) return;
 
     try {
-      const currentSentence = state.sentences[state.currentIndex];
+      const currentSentence = state.sentences[currentIndex];
       const translation = currentSentence.translations[0]?.[0];
 
+      // Play original audio and wait for it to finish
       if (currentSentence.audios?.length) {
         console.log('Playing original audio');
         await playAudio(currentSentence.audios[0].id);
       }
 
+      // Wait for sentence delay (starts AFTER audio finishes)
+      console.log('Starting sentence delay');
       await new Promise(resolve => {
         timerRef.current = setTimeout(resolve, state.sentenceDelay * 1000);
       });
 
+      // Play translation audio and wait for it to finish
       if (translation?.audios?.length) {
         console.log('Playing translation audio');
         await playAudio(translation.audios[0].id, true);
       }
 
+      // Wait for translation delay (starts AFTER audio finishes)
+      console.log('Starting translation delay');
       await new Promise(resolve => {
         timerRef.current = setTimeout(resolve, state.translationDelay * 1000);
       });
 
-      if (isMounted.current) {
-        const nextIndex = (state.currentIndex + 1) % state.sentences.length;
+      if (isMounted.current && state.isPlaying) {
+        const nextIndex = (currentIndex + 1) % state.sentences.length;
+        console.log('Moving to next index:', nextIndex);
+
+        // Update state.currentIndex
         setState(s => ({
           ...s,
           currentIndex: nextIndex,
           showTranslation: false
         }));
 
+        // Fetch new sentences if near the end
         if (nextIndex === state.sentences.length - 1) {
           fetchSentences();
         }
 
-        // Continue auto-play if still playing
-        if (state.isPlaying) {
-          handleAutoPlay();
-        }
+        // Continue auto-play with the updated index
+        handleAutoPlay(nextIndex);
       }
     } catch (error) {
       console.error('Error in auto-play:', error);
@@ -179,43 +224,26 @@ export default function App() {
   };
 
   const togglePlayback = () => {
-    setState(s => {
-      const newState = { ...s, isPlaying: !s.isPlaying };
-      console.log('Toggle playback - newState.isPlaying:', newState.isPlaying);
-
-      // If stopping, pause audio and clear timers
-      if (!newState.isPlaying) {
-        if (state.sound) {
-          state.sound.pauseAsync(); // Pause the current audio
-        }
-        if (state.translationSound) {
-          state.translationSound.pauseAsync(); // Pause the translation audio
-        }
-        if (timerRef.current) {
-          clearTimeout(timerRef.current); // Clear any pending timers
-        }
-      }
-
-      // If starting, call handleAutoPlay after state updates
-      if (newState.isPlaying) {
-        setTimeout(() => {
-          handleAutoPlay();
-        }, 0); // Use setTimeout to ensure state is updated
-      }
-
-      return newState;
-    });
+    setState(s => ({ ...s, isPlaying: !s.isPlaying }));
   };
 
   const changeIndex = (direction: number) => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    stopAudio();
-    setState(s => ({
-      ...s,
-      currentIndex: Math.max(0, Math.min(s.sentences.length - 1, s.currentIndex + direction)),
-      isPlaying: false,
-      showTranslation: false
-    }));
+    clearTimeout(timerRef.current); // Clear any pending timers
+    stopAudio(); // Stop any currently playing audio
+
+    setState(s => {
+      const newIndex = Math.max(0, Math.min(s.sentences.length - 1, s.currentIndex + direction));
+      return {
+        ...s,
+        currentIndex: newIndex,
+        showTranslation: false
+      };
+    });
+
+    // If auto-play is enabled, start playing the new sentence
+    if (state.isPlaying) {
+      handleAutoPlay(state.currentIndex + direction); // Pass the new index
+    }
   };
 
   if (state.isLoading) {
