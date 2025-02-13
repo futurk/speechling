@@ -3,9 +3,7 @@ import {
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
-  ActivityIndicator,
-  Platform
+  TouchableOpacity
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { Picker } from '@react-native-picker/picker';
@@ -37,6 +35,7 @@ interface AppState {
   translationDelay: number;
   sound: Audio.Sound | null;
   translationSound: Audio.Sound | null;
+  repeatOriginalAfterTranslation: boolean;
 }
 
 const LANGUAGES = {
@@ -63,6 +62,7 @@ export default function App() {
     translationDelay: 2,
     sound: null,
     translationSound: null,
+    repeatOriginalAfterTranslation: true,
   });
 
   const timerRef = useRef<number | null>(null); // Use `number` instead of `Timeout`
@@ -130,11 +130,11 @@ export default function App() {
           from: state.fromLang,
           to: state.toLang,
           trans_to: state.toLang,
-          word_count_min: 10, // remove on production
           has_audio: 'yes',
           trans_has_audio: 'yes',
           sort: 'random',
           page: 1
+          //word_count_min: 10,
         }
       });
 
@@ -311,6 +311,20 @@ export default function App() {
           reject(new DOMException('Aborted', 'AbortError'))))
       ]);
 
+      // Repeat original audio if enabled
+      console.log(state.repeatOriginalAfterTranslation, currentSentence.audios?.length);
+      if (state.repeatOriginalAfterTranslation && currentSentence.audios?.length) {
+        await playAudio(currentSentence.audios[0].id, false, controller.signal);
+        if (controller.signal.aborted) return;
+
+        // Repeat delay (same as sentence delay)
+        await Promise.race([
+          new Promise(resolve => setTimeout(resolve, state.sentenceDelay * 1000)),
+          new Promise((_, reject) => controller.signal.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError'))))
+        ]);
+      }
+
       if (!isMounted.current || !state.isPlaying) return;
 
       const nextIndex = (currentIndex + 1) % state.sentences.length;
@@ -443,6 +457,14 @@ export default function App() {
                 style={styles.slider}
               />
             </View>
+            <TouchableOpacity
+              style={styles.repeatButton}
+              onPress={() => setState(s => ({ ...s, repeatOriginalAfterTranslation: !s.repeatOriginalAfterTranslation }))}
+            >
+              <Text style={styles.buttonText}>
+                {state.repeatOriginalAfterTranslation ? '✅ Repeat Original' : '🔁 Repeat Original'}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity
@@ -464,6 +486,13 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  repeatButton: {
+    backgroundColor: '#8e44ad',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 10,
+  },
   container: {
     flex: 1,
     padding: 20,
