@@ -268,6 +268,8 @@ export default function App() {
       const currentSentence = state.sentences[currentIndex];
       const translation = currentSentence.translations[0]?.[0];
 
+      console.log('', currentSentence);
+
       // Add initial cooldown
       await new Promise((resolve, reject) => {
         const timeout = setTimeout(resolve, 500);
@@ -287,12 +289,14 @@ export default function App() {
       }
 
       // Sentence delay
-      console.log('Starting sentence delay:', sentenceDelayRef.current);
-      await Promise.race([
-        new Promise(resolve => setTimeout(resolve, sentenceDelayRef.current * 1000)),
-        new Promise((_, reject) => controller.signal.addEventListener('abort', () =>
-          reject(new DOMException('Aborted', 'AbortError'))))
-      ]);
+      await new Promise((resolve, reject) => {
+        timerRef.current = setTimeout(resolve, sentenceDelayRef.current * 1000) as unknown as number;
+        controller.signal.addEventListener('abort', () => {
+          clearTimeout(timerRef.current!);
+          timerRef.current = null;
+          reject(new DOMException('Aborted', 'AbortError'));
+        });
+      });
 
       if (controller.signal.aborted) return;
 
@@ -304,25 +308,30 @@ export default function App() {
       }
 
       // Translation delay
-      console.log('Starting translation delay:', translationDelayRef.current);
-      await Promise.race([
-        new Promise(resolve => setTimeout(resolve, translationDelayRef.current * 1000)),
-        new Promise((_, reject) => controller.signal.addEventListener('abort', () =>
-          reject(new DOMException('Aborted', 'AbortError'))))
-      ]);
+      await new Promise((resolve, reject) => {
+        timerRef.current = setTimeout(resolve, translationDelayRef.current * 1000) as unknown as number;
+        controller.signal.addEventListener('abort', () => {
+          clearTimeout(timerRef.current!);
+          timerRef.current = null;
+          reject(new DOMException('Aborted', 'AbortError'));
+        });
+      });
 
       // Repeat original audio if enabled
       console.log(state.repeatOriginalAfterTranslation, currentSentence.audios?.length);
       if (state.repeatOriginalAfterTranslation && currentSentence.audios?.length) {
+        // Play original audio
         await playAudio(currentSentence.audios[0].id, false, controller.signal);
         if (controller.signal.aborted) return;
-
-        // Repeat delay (same as sentence delay)
-        await Promise.race([
-          new Promise(resolve => setTimeout(resolve, state.sentenceDelay * 1000)),
-          new Promise((_, reject) => controller.signal.addEventListener('abort', () =>
-            reject(new DOMException('Aborted', 'AbortError'))))
-        ]);
+        // Sentence delay
+        await new Promise((resolve, reject) => {
+          timerRef.current = setTimeout(resolve, sentenceDelayRef.current * 1000) as unknown as number;
+          controller.signal.addEventListener('abort', () => {
+            clearTimeout(timerRef.current!);
+            timerRef.current = null;
+            reject(new DOMException('Aborted', 'AbortError'));
+          });
+        });
       }
 
       if (!isMounted.current || !state.isPlaying) return;
@@ -341,8 +350,21 @@ export default function App() {
     }
   };
 
-  const togglePlayback = () => {
-    setState(s => ({ ...s, isPlaying: !s.isPlaying }));
+  const togglePlayback = async () => {
+    if (state.isPlaying) {
+      // Pause: stop audio and clear timers
+      playbackController.current?.abort();
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      await stopAudio();
+      setState(s => ({ ...s, isPlaying: false }));
+    } else {
+      // Resume: restart current sentence
+      setState(s => ({ ...s, isPlaying: true }));
+      handleAutoPlay(state.currentIndex);
+    }
   };
 
   const changeIndex = async (direction: number) => {
