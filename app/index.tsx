@@ -170,8 +170,10 @@ export default function App() {
     }
   };
 
-  const playAudio = async (audioId: number, isTranslation = false): Promise<void> => {
+  const playAudio = async (audioId: number, isTranslation = false, signal?: AbortSignal): Promise<void> => {
     await stopAudio();
+    if (signal?.aborted) return;
+
     const audioUrl = `https://tatoeba.org/audio/download/${audioId}`;
     console.log('Attempting to play audio from URL:', audioUrl);
 
@@ -181,99 +183,103 @@ export default function App() {
         { shouldPlay: true }
       );
 
+      if (signal?.aborted) {
+        await sound.unloadAsync();
+        return;
+      }
+
       if (isMounted.current) {
         setState(s => ({ ...s, [isTranslation ? 'translationSound' : 'sound']: sound }));
       }
 
-      // Return a promise that resolves when playback finishes
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
+        const onAbort = () => {
+          sound.unloadAsync().then(resolve).catch(resolve);
+          reject(new DOMException('Aborted', 'AbortError'));
+        };
+
+        signal?.addEventListener('abort', onAbort);
+
         sound.setOnPlaybackStatusUpdate((status) => {
-          if (!status.isLoaded) return; // Skip if status is not loaded
+          if (!status.isLoaded) return;
           if (status.didJustFinish) {
             console.log('Audio playback finished');
+            signal?.removeEventListener('abort', onAbort);
             resolve();
           }
         });
       });
     } catch (error) {
-      console.error('Error playing audio:', error);
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       throw error;
     }
   };
 
   const handleAutoPlay = async (currentIndex: number) => {
-    // Cancel any previous playback
-    if (playbackController.current) {
-      playbackController.current.abort();
-    }
+    playbackController.current?.abort();
     const controller = new AbortController();
     playbackController.current = controller;
     const playbackId = ++currentPlaybackId.current;
 
     console.log('Starting auto-play for index:', currentIndex);
-    if (!state.sentences.length || !state.isPlaying) return;
 
     try {
       const currentSentence = state.sentences[currentIndex];
       const translation = currentSentence.translations[0]?.[0];
 
-      // Check if playback was canceled
-      if (controller.signal.aborted || playbackId !== currentPlaybackId.current) return;
-
-      // Wait for 500ms before playing audio
-      console.log('Wait for 500ms before playing audio');
-      await new Promise(resolve => {
-        timerRef.current = setTimeout(resolve, 500) as unknown as number;
+      // Add initial cooldown
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(resolve, 500);
+        controller.signal.addEventListener('abort', () => {
+          clearTimeout(timeout);
+          reject(new DOMException('Aborted', 'AbortError'));
+        });
       });
 
-      // Play original audio and wait for it to finish
+      if (controller.signal.aborted || playbackId !== currentPlaybackId.current) return;
+
+      // Play original audio
+      console.log('Playing original audio');
       if (currentSentence.audios?.length) {
-        console.log('Playing original audio');
-        await playAudio(currentSentence.audios[0].id);
+        await playAudio(currentSentence.audios[0].id, false, controller.signal);
         if (controller.signal.aborted) return;
       }
 
-      // Wait for sentence delay
+      // Sentence delay
       console.log('Starting sentence delay:', sentenceDelayRef.current);
       await Promise.race([
         new Promise(resolve => setTimeout(resolve, sentenceDelayRef.current * 1000)),
-        new Promise((_, reject) => controller.signal.addEventListener('abort', () => reject()))
+        new Promise((_, reject) => controller.signal.addEventListener('abort', () =>
+          reject(new DOMException('Aborted', 'AbortError'))))
       ]);
 
-      if (controller.signal.aborted || playbackId !== currentPlaybackId.current) return;
+      if (controller.signal.aborted) return;
 
       // Play translation audio
       if (translation?.audios?.length) {
         console.log('Playing translation audio');
-        await playAudio(translation.audios[0].id, true);
+        await playAudio(translation.audios[0].id, true, controller.signal);
         if (controller.signal.aborted) return;
       }
 
-      // Wait for translation delay
+      // Translation delay
       console.log('Starting translation delay:', translationDelayRef.current);
       await Promise.race([
         new Promise(resolve => setTimeout(resolve, translationDelayRef.current * 1000)),
-        new Promise((_, reject) => controller.signal.addEventListener('abort', () => reject()))
+        new Promise((_, reject) => controller.signal.addEventListener('abort', () =>
+          reject(new DOMException('Aborted', 'AbortError'))))
       ]);
 
-      if (controller.signal.aborted || playbackId !== currentPlaybackId.current) return;
+      if (!isMounted.current || !state.isPlaying) return;
 
-      if (isMounted.current && state.isPlaying) {
-        const nextIndex = (currentIndex + 1) % state.sentences.length;
-        setState(s => ({
-          ...s,
-          currentIndex: nextIndex,
-          showTranslation: false
-        }));
+      const nextIndex = (currentIndex + 1) % state.sentences.length;
+      setState(s => ({ ...s, currentIndex: nextIndex, showTranslation: false }));
 
-        if (nextIndex === state.sentences.length - 1) {
-          fetchSentences();
-        }
+      if (nextIndex === state.sentences.length - 1) fetchSentences();
 
-        handleAutoPlay(nextIndex);
-      }
+      handleAutoPlay(nextIndex);
     } catch (error) {
-      if (!controller.signal.aborted) {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) {
         console.error('Error in auto-play:', error);
         setState(s => ({ ...s, isPlaying: false }));
       }
@@ -285,45 +291,26 @@ export default function App() {
   };
 
   const changeIndex = async (direction: number) => {
-    // Cancel current playback
-    if (playbackController.current) {
-      playbackController.current.abort();
-      playbackController.current = null;
-    }
+    playbackController.current?.abort();
     currentPlaybackId.current++;
-
-    if (timerRef.current !== null) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
 
     try {
       await stopAudio();
-    } catch (error) {
-      console.error('Error stopping audio:', error);
-    }
+      const newIndex = Math.max(0, Math.min(state.sentences.length - 1, state.currentIndex + direction));
 
-    setState(s => {
-      const newIndex = Math.max(0, Math.min(s.sentences.length - 1, s.currentIndex + direction));
-      return {
+      setState(s => ({
         ...s,
         currentIndex: newIndex,
         showTranslation: false
-      };
-    });
+      }));
 
-    if (state.isPlaying) {
-      handleAutoPlay(state.currentIndex + direction);
+      if (state.isPlaying) {
+        handleAutoPlay(newIndex);
+      }
+    } catch (error) {
+      console.error('Error changing index:', error);
     }
   };
-
-  if (state.isLoading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
-  }
 
   const currentSentence = state.sentences[state.currentIndex] || {};
   const translation = currentSentence.translations?.[0]?.[0];
