@@ -115,6 +115,13 @@ export default function App() {
     }
   }, [state.isPlaying]); // Trigger when isPlaying changes
 
+  useEffect(() => {
+    console.log('Current index:', state.currentIndex, 'Total sentences:', state.sentences.length);
+    if (state.isPlaying && state.currentIndex >= state.sentences.length - 5) {
+      fetchMoreSentences();
+    }
+  }, [state.currentIndex]);
+
   const fetchSentences = async () => {
     try {
       setState(s => ({ ...s, isLoading: true }));
@@ -143,6 +150,31 @@ export default function App() {
     } catch (error) {
       console.error(error);
       setState(s => ({ ...s, isLoading: false }));
+    }
+  };
+
+  const fetchMoreSentences = async () => {
+    try {
+      const response = await axios.get<{ results: Sentence[] }>(API_URL, {
+        params: {
+          from: state.fromLang,
+          to: state.toLang,
+          trans_to: state.toLang,
+          has_audio: 'yes',
+          trans_has_audio: 'yes',
+          sort: 'random',
+          page: 1
+        }
+      });
+
+      if (isMounted.current) {
+        setState(s => ({
+          ...s,
+          sentences: [...s.sentences, ...response.data.results], // Append new sentences
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching more sentences:', error);
     }
   };
 
