@@ -179,7 +179,6 @@ export default function App() {
   };
 
   const stopAudio = async () => {
-    console.log('Stopping audio...');
     try {
       if (state.sound) {
         const status = await state.sound.getStatusAsync();
@@ -256,17 +255,29 @@ export default function App() {
     }
   };
 
+  const findTranslationWithAudio = (translations: Sentence['translations']) => {
+    for (let i = 0; i < translations.length; i++) {
+      for (let j = 0; j < translations[i].length; j++) {
+        const translation = translations[i][j];
+        if (translation?.audios?.length) {
+          return translation;
+        }
+      }
+    }
+    return null;
+  };
+
   const handleAutoPlay = async (currentIndex: number) => {
     playbackController.current?.abort();
     const controller = new AbortController();
     playbackController.current = controller;
     const playbackId = ++currentPlaybackId.current;
 
-    console.log('Starting auto-play for index:', currentIndex);
+    console.log('currentIndex:', currentIndex);
 
     try {
       const currentSentence = state.sentences[currentIndex];
-      const translation = currentSentence.translations[0]?.[0];
+      const translation = findTranslationWithAudio(currentSentence.translations);
 
       console.log('', currentSentence);
 
@@ -289,6 +300,7 @@ export default function App() {
       }
 
       // Sentence delay
+      console.log('Sentence delay is going to finish in:', sentenceDelayRef.current)
       await new Promise((resolve, reject) => {
         timerRef.current = setTimeout(resolve, sentenceDelayRef.current * 1000) as unknown as number;
         controller.signal.addEventListener('abort', () => {
@@ -300,14 +312,15 @@ export default function App() {
 
       if (controller.signal.aborted) return;
 
-      // Play translation audio
+      // Play translation audio (if available)
+      console.log('Playing translation audio');
       if (translation?.audios?.length) {
-        console.log('Playing translation audio');
         await playAudio(translation.audios[0].id, true, controller.signal);
         if (controller.signal.aborted) return;
       }
 
       // Translation delay
+      console.log('Translation delay is going to finish in:', translationDelayRef.current)
       await new Promise((resolve, reject) => {
         timerRef.current = setTimeout(resolve, translationDelayRef.current * 1000) as unknown as number;
         controller.signal.addEventListener('abort', () => {
@@ -430,7 +443,7 @@ export default function App() {
         style={styles.fetchButton}
         onPress={fetchSentences}
       >
-        <Text style={styles.buttonText}>Load Sentences</Text>
+        <Text style={styles.buttonText}>Reload Sentences</Text>
       </TouchableOpacity>
 
       {currentSentence.text && (
