@@ -207,6 +207,12 @@ export default function App() {
       const currentSentence = state.sentences[currentIndex];
       const translation = currentSentence.translations[0]?.[0];
 
+      // Wait for 500ms before playing audio
+      console.log('Wait for 500ms before playing audio');
+      await new Promise(resolve => {
+        timerRef.current = setTimeout(resolve, 500) as unknown as number;
+      });
+
       // Play original audio and wait for it to finish
       if (currentSentence.audios?.length) {
         console.log('Playing original audio');
