@@ -69,6 +69,8 @@ export default function App() {
   const isMounted = useRef(true);
   const sentenceDelayRef = useRef(state.sentenceDelay);
   const translationDelayRef = useRef(state.translationDelay);
+  const playbackController = useRef<AbortController | null>(null);
+  const currentPlaybackId = useRef(0);
 
   const handleSentenceDelayChange = (value: number) => {
     sentenceDelayRef.current = value; // Update ref
@@ -200,12 +202,23 @@ export default function App() {
   };
 
   const handleAutoPlay = async (currentIndex: number) => {
+    // Cancel any previous playback
+    if (playbackController.current) {
+      playbackController.current.abort();
+    }
+    const controller = new AbortController();
+    playbackController.current = controller;
+    const playbackId = ++currentPlaybackId.current;
+
     console.log('Starting auto-play for index:', currentIndex);
     if (!state.sentences.length || !state.isPlaying) return;
 
     try {
       const currentSentence = state.sentences[currentIndex];
       const translation = currentSentence.translations[0]?.[0];
+
+      // Check if playback was canceled
+      if (controller.signal.aborted || playbackId !== currentPlaybackId.current) return;
 
       // Wait for 500ms before playing audio
       console.log('Wait for 500ms before playing audio');
@@ -217,48 +230,53 @@ export default function App() {
       if (currentSentence.audios?.length) {
         console.log('Playing original audio');
         await playAudio(currentSentence.audios[0].id);
+        if (controller.signal.aborted) return;
       }
 
-      // Wait for sentence delay (using ref value)
+      // Wait for sentence delay
       console.log('Starting sentence delay:', sentenceDelayRef.current);
-      await new Promise(resolve => {
-        timerRef.current = setTimeout(resolve, sentenceDelayRef.current * 1000) as unknown as number;
-      });
+      await Promise.race([
+        new Promise(resolve => setTimeout(resolve, sentenceDelayRef.current * 1000)),
+        new Promise((_, reject) => controller.signal.addEventListener('abort', () => reject()))
+      ]);
 
-      // Play translation audio and wait for it to finish
+      if (controller.signal.aborted || playbackId !== currentPlaybackId.current) return;
+
+      // Play translation audio
       if (translation?.audios?.length) {
         console.log('Playing translation audio');
         await playAudio(translation.audios[0].id, true);
+        if (controller.signal.aborted) return;
       }
 
-      // Wait for translation delay (using ref value)
+      // Wait for translation delay
       console.log('Starting translation delay:', translationDelayRef.current);
-      await new Promise(resolve => {
-        timerRef.current = setTimeout(resolve, sentenceDelayRef.current * 1000) as unknown as number;
-      });
+      await Promise.race([
+        new Promise(resolve => setTimeout(resolve, translationDelayRef.current * 1000)),
+        new Promise((_, reject) => controller.signal.addEventListener('abort', () => reject()))
+      ]);
+
+      if (controller.signal.aborted || playbackId !== currentPlaybackId.current) return;
 
       if (isMounted.current && state.isPlaying) {
         const nextIndex = (currentIndex + 1) % state.sentences.length;
-        console.log('Moving to next index:', nextIndex);
-
-        // Update state.currentIndex
         setState(s => ({
           ...s,
           currentIndex: nextIndex,
           showTranslation: false
         }));
 
-        // Fetch new sentences if near the end
         if (nextIndex === state.sentences.length - 1) {
           fetchSentences();
         }
 
-        // Continue auto-play with the updated index
         handleAutoPlay(nextIndex);
       }
     } catch (error) {
-      console.error('Error in auto-play:', error);
-      setState(s => ({ ...s, isPlaying: false }));
+      if (!controller.signal.aborted) {
+        console.error('Error in auto-play:', error);
+        setState(s => ({ ...s, isPlaying: false }));
+      }
     }
   };
 
@@ -267,13 +285,20 @@ export default function App() {
   };
 
   const changeIndex = async (direction: number) => {
+    // Cancel current playback
+    if (playbackController.current) {
+      playbackController.current.abort();
+      playbackController.current = null;
+    }
+    currentPlaybackId.current++;
+
     if (timerRef.current !== null) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
 
     try {
-      await stopAudio(); // Stop any currently playing audio
+      await stopAudio();
     } catch (error) {
       console.error('Error stopping audio:', error);
     }
@@ -287,7 +312,6 @@ export default function App() {
       };
     });
 
-    // If auto-play is enabled, start playing the new sentence
     if (state.isPlaying) {
       handleAutoPlay(state.currentIndex + direction);
     }
