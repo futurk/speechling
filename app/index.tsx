@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { Picker } from '@react-native-picker/picker';
-import { Audio } from 'expo-av';
+import { Audio, AVPlaybackStatus } from 'expo-av';
 import axios from 'axios';
 
 type LanguageCode = keyof typeof LANGUAGES;
@@ -192,20 +192,29 @@ export default function App() {
         setState(s => ({ ...s, [isTranslation ? 'translationSound' : 'sound']: sound }));
       }
 
-      return new Promise((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
         const onAbort = () => {
-          sound.unloadAsync().then(resolve).catch(resolve);
+          sound.unloadAsync()
+            .then(() => resolve()) // Explicitly resolve with void
+            .catch(() => resolve()); // Explicitly resolve with void
           reject(new DOMException('Aborted', 'AbortError'));
         };
 
         signal?.addEventListener('abort', onAbort);
 
-        sound.setOnPlaybackStatusUpdate((status) => {
-          if (!status.isLoaded) return;
-          if (status.didJustFinish) {
+        sound.setOnPlaybackStatusUpdate((status: AVPlaybackStatus) => {
+          if (!status.isLoaded) return; // Skip if status is not loaded
+
+          if ('didJustFinish' in status && status.didJustFinish) {
             console.log('Audio playback finished');
             signal?.removeEventListener('abort', onAbort);
-            resolve();
+            resolve(); // Resolve with void
+          }
+
+          if ('error' in status) {
+            console.error('Audio playback error:', status.error);
+            signal?.removeEventListener('abort', onAbort);
+            reject(status.error);
           }
         });
       });
