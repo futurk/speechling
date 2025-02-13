@@ -339,8 +339,6 @@ export default function App() {
       const nextIndex = (currentIndex + 1) % state.sentences.length;
       setState(s => ({ ...s, currentIndex: nextIndex, showTranslation: false }));
 
-      if (nextIndex === state.sentences.length - 1) fetchSentences();
-
       handleAutoPlay(nextIndex);
     } catch (error) {
       if (!(error instanceof DOMException && error.name === 'AbortError')) {
