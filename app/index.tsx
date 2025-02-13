@@ -145,9 +145,27 @@ export default function App() {
   };
 
   const stopAudio = async () => {
-    if (state.sound) await state.sound.unloadAsync();
-    if (state.translationSound) await state.translationSound.unloadAsync();
-    setState(s => ({ ...s, sound: null, translationSound: null }));
+    console.log('Stopping audio...');
+    try {
+      if (state.sound) {
+        const status = await state.sound.getStatusAsync();
+        if (status.isLoaded) {
+          console.log('Pausing main audio');
+          await state.sound.pauseAsync();
+        }
+      }
+      if (state.translationSound) {
+        const status = await state.translationSound.getStatusAsync();
+        if (status.isLoaded) {
+          console.log('Pausing translation audio');
+          await state.translationSound.pauseAsync();
+        }
+      }
+    } catch (error) {
+      console.error('Error stopping audio:', error);
+    } finally {
+      setState(s => ({ ...s, sound: null, translationSound: null }));
+    }
   };
 
   const playAudio = async (audioId: number, isTranslation = false): Promise<void> => {
@@ -242,12 +260,17 @@ export default function App() {
     setState(s => ({ ...s, isPlaying: !s.isPlaying }));
   };
 
-  const changeIndex = (direction: number) => {
+  const changeIndex = async (direction: number) => {
     if (timerRef.current !== null) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-    stopAudio(); // Stop any currently playing audio
+
+    try {
+      await stopAudio(); // Stop any currently playing audio
+    } catch (error) {
+      console.error('Error stopping audio:', error);
+    }
 
     setState(s => {
       const newIndex = Math.max(0, Math.min(s.sentences.length - 1, s.currentIndex + direction));
@@ -260,7 +283,7 @@ export default function App() {
 
     // If auto-play is enabled, start playing the new sentence
     if (state.isPlaying) {
-      handleAutoPlay(state.currentIndex + direction); // Pass the new index
+      handleAutoPlay(state.currentIndex + direction);
     }
   };
 
