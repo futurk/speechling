@@ -115,13 +115,6 @@ export default function App() {
     }
   }, [state.isPlaying]); // Trigger when isPlaying changes
 
-  useEffect(() => {
-    console.log('Current index:', state.currentIndex, 'Total sentences:', state.sentences.length);
-    if (state.isPlaying && state.currentIndex >= state.sentences.length - 5) {
-      fetchMoreSentences();
-    }
-  }, [state.currentIndex]);
-
   const fetchSentences = async () => {
     try {
       setState(s => ({ ...s, isLoading: true }));
@@ -273,9 +266,14 @@ export default function App() {
     playbackController.current = controller;
     const playbackId = ++currentPlaybackId.current;
 
-    console.log('currentIndex:', currentIndex);
+    console.log('currentIndex:', currentIndex, 'Total sentences:', state.sentences.length);
 
     try {
+      // Fetch more sentences if we're nearing the end
+      if (currentIndex >= state.sentences.length - 5) {
+        await fetchMoreSentences();
+      }
+
       const currentSentence = state.sentences[currentIndex];
       const translation = findTranslationWithAudio(currentSentence.translations);
 
@@ -349,7 +347,7 @@ export default function App() {
 
       if (!isMounted.current || !state.isPlaying) return;
 
-      const nextIndex = (currentIndex + 1) % state.sentences.length;
+      const nextIndex = (currentIndex + 1);
       setState(s => ({ ...s, currentIndex: nextIndex, showTranslation: false }));
 
       handleAutoPlay(nextIndex);
