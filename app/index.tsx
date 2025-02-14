@@ -3,7 +3,8 @@ import {
   StyleSheet,
   Text,
   View,
-  TouchableOpacity
+  TouchableOpacity,
+  ScrollView
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { Picker } from '@react-native-picker/picker';
@@ -446,24 +447,26 @@ export default function App() {
 
       {currentSentence.text && (
         <View style={styles.card}>
-          <Text style={styles.sentenceText}>{currentSentence.text}</Text>
+          <ScrollView style={styles.sentenceContainer}>
+            <Text style={styles.sentenceText}>{currentSentence.text}</Text>
+          </ScrollView>
 
+          {/* Playback Controls */}
           <View style={styles.controls}>
             <TouchableOpacity onPress={() => changeIndex(-1)}>
               <Text style={styles.controlText}>⏮</Text>
             </TouchableOpacity>
-
             <TouchableOpacity onPress={togglePlayback}>
               <Text style={styles.controlText}>
                 {state.isPlaying ? '⏸' : '▶'}
               </Text>
             </TouchableOpacity>
-
             <TouchableOpacity onPress={() => changeIndex(1)}>
               <Text style={styles.controlText}>⏭</Text>
             </TouchableOpacity>
           </View>
 
+          {/* Delay Controls */}
           <View style={styles.delayControls}>
             <View style={styles.delayGroup}>
               <Text>After Sentence: {state.sentenceDelay}s</Text>
@@ -476,7 +479,6 @@ export default function App() {
                 style={styles.slider}
               />
             </View>
-
             <View style={styles.delayGroup}>
               <Text>After Translation: {state.translationDelay}s</Text>
               <Slider
@@ -488,6 +490,7 @@ export default function App() {
                 style={styles.slider}
               />
             </View>
+            {/* Repeat Button */}
             <TouchableOpacity
               style={styles.repeatButton}
               onPress={() => setState(s => ({ ...s, repeatOriginalAfterTranslation: !s.repeatOriginalAfterTranslation }))}
@@ -498,6 +501,7 @@ export default function App() {
             </TouchableOpacity>
           </View>
 
+          {/* Translation Toggle */}
           <TouchableOpacity
             style={styles.translationButton}
             onPress={() => setState(s => ({ ...s, showTranslation: !s.showTranslation }))}
@@ -507,6 +511,7 @@ export default function App() {
             </Text>
           </TouchableOpacity>
 
+          {/* Translation Text */}
           {state.showTranslation && translation?.text && (
             <Text style={styles.translationText}>{translation.text}</Text>
           )}
@@ -523,6 +528,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 10,
+  },
+  sentenceContainer: {
+    height: 100, // Fixed height for the sentence container
   },
   container: {
     flex: 1,
