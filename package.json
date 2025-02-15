@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "test": "jest --watchAll",
     "lint": "expo lint",
-    "deploy-hosting": "expo export --platform web && eas deploy"
+    "deploy-test": "expo export --platform web && eas deploy",
+    "deploy-production": "expo export --platform web && eas deploy --prod"
   },
   "jest": {
     "preset": "jest-expo"
