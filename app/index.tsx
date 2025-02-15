@@ -349,7 +349,7 @@ export default function App() {
       if (!isMounted.current || !state.isPlaying) return;
 
       const nextIndex = (currentIndex + 1);
-      setState(s => ({ ...s, currentIndex: nextIndex, showTranslation: false }));
+      setState(s => ({ ...s, currentIndex: nextIndex }));
 
       handleAutoPlay(nextIndex);
     } catch (error) {
@@ -383,12 +383,15 @@ export default function App() {
 
     try {
       await stopAudio();
-      const newIndex = Math.max(0, Math.min(state.sentences.length - 1, state.currentIndex + direction));
 
+      // Add a small delay to absorb rapid clicks
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const newIndex = Math.max(0, Math.min(state.sentences.length - 1, state.currentIndex + direction));
+      console.log('newIndex:', newIndex);
       setState(s => ({
         ...s,
-        currentIndex: newIndex,
-        showTranslation: false
+        currentIndex: newIndex
       }));
 
       if (state.isPlaying) {
@@ -439,7 +442,7 @@ export default function App() {
       </View>
 
       <TouchableOpacity
-        style={styles.fetchButton}
+        style={styles.reloadButton}
         onPress={fetchSentences}
       >
         <Text style={styles.buttonText}>Reload Sentences</Text>
@@ -447,12 +450,17 @@ export default function App() {
 
       {currentSentence.text && (
         <View style={styles.card}>
-          <ScrollView style={styles.sentenceContainer}>
+          <View style={styles.sentenceContainer}>
+            {/* Sentence Text */}
             <Text style={styles.sentenceText}>{currentSentence.text}</Text>
-          </ScrollView>
+            {/* Translation Text */}
+            {state.showTranslation && translation?.text && (
+              <Text style={styles.translationText}>{translation.text}</Text>
+            )}
+          </View>
 
           {/* Playback Controls */}
-          <View style={styles.controls}>
+          <View style={styles.playbackControls}>
             <TouchableOpacity onPress={() => changeIndex(-1)}>
               <Text style={styles.controlText}>⏮</Text>
             </TouchableOpacity>
@@ -468,7 +476,7 @@ export default function App() {
 
           {/* Delay Controls */}
           <View style={styles.delayControls}>
-            <View style={styles.delayGroup}>
+            <View>
               <Text>After Sentence: {state.sentenceDelay}s</Text>
               <Slider
                 minimumValue={1}
@@ -479,7 +487,7 @@ export default function App() {
                 style={styles.slider}
               />
             </View>
-            <View style={styles.delayGroup}>
+            <View>
               <Text>After Translation: {state.translationDelay}s</Text>
               <Slider
                 minimumValue={1}
@@ -490,17 +498,16 @@ export default function App() {
                 style={styles.slider}
               />
             </View>
-            {/* Repeat Button */}
-            <TouchableOpacity
-              style={styles.repeatButton}
-              onPress={() => setState(s => ({ ...s, repeatOriginalAfterTranslation: !s.repeatOriginalAfterTranslation }))}
-            >
-              <Text style={styles.buttonText}>
-                {state.repeatOriginalAfterTranslation ? '✅ Repeat Original' : '🔁 Repeat Original'}
-              </Text>
-            </TouchableOpacity>
           </View>
-
+          {/* Repeat Button */}
+          <TouchableOpacity
+            style={styles.repeatButton}
+            onPress={() => setState(s => ({ ...s, repeatOriginalAfterTranslation: !s.repeatOriginalAfterTranslation }))}
+          >
+            <Text style={styles.buttonText}>
+              {state.repeatOriginalAfterTranslation ? '✅ Repeat Original' : '🔁 Repeat Original'}
+            </Text>
+          </TouchableOpacity>
           {/* Translation Toggle */}
           <TouchableOpacity
             style={styles.translationButton}
@@ -510,11 +517,6 @@ export default function App() {
               {state.showTranslation ? 'Hide Translation' : 'Show Translation'}
             </Text>
           </TouchableOpacity>
-
-          {/* Translation Text */}
-          {state.showTranslation && translation?.text && (
-            <Text style={styles.translationText}>{translation.text}</Text>
-          )}
         </View>
       )}
     </View>
@@ -522,13 +524,6 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  repeatButton: {
-    backgroundColor: '#8e44ad',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 10,
-  },
   sentenceContainer: {
     height: 100, // Fixed height for the sentence container
   },
@@ -546,6 +541,13 @@ const styles = StyleSheet.create({
     height: 50,
     width: '48%',
   },
+  reloadButton: {
+    backgroundColor: '#3498db',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 15,
+    alignItems: 'center',
+  },
   card: {
     backgroundColor: 'white',
     borderRadius: 15,
@@ -553,7 +555,19 @@ const styles = StyleSheet.create({
     boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
     elevation: 5,
   },
-  controls: {
+  sentenceText: {
+    fontSize: 20,
+    textAlign: 'center',
+    color: '#34495e',
+  },
+  translationText: {
+    fontSize: 16,
+    color: '#7f8c8d',
+    textAlign: 'center',
+    marginTop: 10,
+    fontStyle: 'italic',
+  },
+  playbackControls: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginVertical: 20,
@@ -562,35 +576,19 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: '#2c3e50',
   },
-  sentenceText: {
-    fontSize: 20,
-    textAlign: 'center',
-    marginVertical: 15,
-    color: '#34495e',
-  },
-  translationText: {
-    fontSize: 16,
-    color: '#7f8c8d',
-    textAlign: 'center',
-    marginTop: 15,
-    fontStyle: 'italic',
-  },
-  delayControls: {
-    marginVertical: 15,
-  },
-  delayGroup: {
-    marginBottom: 15,
-  },
   slider: {
     width: '100%',
     height: 40,
   },
-  fetchButton: {
-    backgroundColor: '#3498db',
+  delayControls: {
+    marginBottom: 10
+  },
+  repeatButton: {
+    backgroundColor: '#8e44ad',
     padding: 15,
     borderRadius: 10,
-    marginBottom: 15,
     alignItems: 'center',
+    marginTop: 10,
   },
   translationButton: {
     backgroundColor: '#27ae60',
