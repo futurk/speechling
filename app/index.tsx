@@ -413,7 +413,7 @@ export default function App() {
   const translation = currentSentence.translations?.[0]?.[0];
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       {state.isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#4A90E2" />
@@ -567,7 +567,7 @@ export default function App() {
           </Text>
         </Text>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
