@@ -72,6 +72,7 @@ export default function App() {
   const isMounted = useRef(true);
   const sentenceDelayRef = useRef(state.sentenceDelay);
   const translationDelayRef = useRef(state.translationDelay);
+  const repeatOriginalAfterTranslationRef = useRef(state.repeatOriginalAfterTranslation);
   const playbackController = useRef<AbortController | null>(null);
   const currentPlaybackId = useRef(0);
 
@@ -84,6 +85,10 @@ export default function App() {
     translationDelayRef.current = value; // Update ref
     setState(s => ({ ...s, translationDelay: value })); // Update state
   };
+
+  useEffect(() => {
+    repeatOriginalAfterTranslationRef.current = state.repeatOriginalAfterTranslation;
+  }, [state.repeatOriginalAfterTranslation]);
 
   useEffect(() => {
     fetchSentences(); // comment when testing
@@ -332,8 +337,8 @@ export default function App() {
       });
 
       // Repeat original audio if enabled
-      console.log(state.repeatOriginalAfterTranslation, currentSentence.audios?.length);
-      if (state.repeatOriginalAfterTranslation && currentSentence.audios?.length) {
+      console.log(repeatOriginalAfterTranslationRef.current, currentSentence.audios?.length);
+      if (repeatOriginalAfterTranslationRef.current && currentSentence.audios?.length) {
         // Play original audio
         await playAudio(currentSentence.audios[0].id, false, controller.signal);
         if (controller.signal.aborted) return;
