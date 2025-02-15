@@ -5,7 +5,8 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator
+  ActivityIndicator,
+  Linking
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { Picker } from '@react-native-picker/picker';
@@ -489,7 +490,7 @@ export default function App() {
               {/* Delay Controls */}
               <View style={styles.delayControls}>
                 <View style={styles.delayGroup}>
-                  <Text style={styles.delayLabel}>After Sentence: {state.sentenceDelay}s</Text>
+                  <Text style={styles.delayLabel}>Delay after sentence: {state.sentenceDelay}s</Text>
                   <Slider
                     minimumValue={1}
                     maximumValue={10}
@@ -503,7 +504,7 @@ export default function App() {
                   />
                 </View>
                 <View style={styles.delayGroup}>
-                  <Text style={styles.delayLabel}>After Translation: {state.translationDelay}s</Text>
+                  <Text style={styles.delayLabel}>Delay after translation: {state.translationDelay}s</Text>
                   <Slider
                     minimumValue={1}
                     maximumValue={10}
@@ -533,7 +534,7 @@ export default function App() {
                   onPress={() => setState(s => ({ ...s, showTranslation: !s.showTranslation }))}
                 >
                   <Text style={styles.toggleButtonText}>
-                    {state.showTranslation ? '✅ Translation' : '🌐 Translation'}
+                    {state.showTranslation ? '✅ Hide Translation' : '🌐 Show Translation'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -541,6 +542,26 @@ export default function App() {
           )}
         </>
       )}
+
+      {/* Credits Footer */}
+      <View style={styles.creditsContainer}>
+        <Text style={styles.creditsText}>
+          Developed by{' '}
+          <Text
+            style={styles.linkText}
+            onPress={() => Linking.openURL('https://github.com/futurk')}
+          >
+            Furkan Ünlütürk
+          </Text>{' '}
+          | Data from{' '}
+          <Text
+            style={styles.linkText}
+            onPress={() => Linking.openURL('https://tatoeba.org')}
+          >
+            Tatoeba
+          </Text>
+        </Text>
+      </View>
     </View>
   );
 }
@@ -667,5 +688,20 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#FFFFFF', // White text
     fontWeight: 'bold',
+  },
+  creditsContainer: {
+    marginTop: 16,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0', // Light gray border
+    alignItems: 'center',
+  },
+  creditsText: {
+    fontSize: 14,
+    color: '#7F8C8D', // Light gray text
+  },
+  linkText: {
+    color: '#4A90E2', // Primary blue
+    textDecorationLine: 'underline',
   },
 });
