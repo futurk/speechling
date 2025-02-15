@@ -123,29 +123,29 @@ export default function App() {
     }
   }, [state.isPlaying]); // Trigger when isPlaying changes
 
-  const fetchSentences = async () => {
+  const fetchSentences = async (append = false) => {
     try {
       setState(s => ({ ...s, isLoading: true }));
-      const response = await axios.get<{ results: Sentence[] }>(API_URL, {
-        params: {
-          from: state.fromLang,
-          to: state.toLang,
-          trans_to: state.toLang,
-          has_audio: 'yes',
-          trans_has_audio: 'yes',
-          sort: 'random',
-          page: 1
-          //word_count_min: 10,
-        }
-      });
+
+      const params: Record<string, string> = {
+        from: state.fromLang,
+        to: state.toLang,
+        trans_to: state.toLang,
+        has_audio: 'yes',
+        trans_has_audio: 'yes',
+        sort: 'random',
+        page: '1',
+      };
+
+      const response = await axios.get<{ results: Sentence[] }>(API_URL, { params });
 
       if (isMounted.current) {
         setState(s => ({
           ...s,
-          sentences: response.data.results,
+          sentences: append ? [...s.sentences, ...response.data.results] : response.data.results,
           isLoading: false,
-          currentIndex: 0,
-          isPlaying: false
+          currentIndex: append ? s.currentIndex : 0,
+          isPlaying: false,
         }));
       }
     } catch (error) {
@@ -155,28 +155,7 @@ export default function App() {
   };
 
   const fetchMoreSentences = async () => {
-    try {
-      const response = await axios.get<{ results: Sentence[] }>(API_URL, {
-        params: {
-          from: state.fromLang,
-          to: state.toLang,
-          trans_to: state.toLang,
-          has_audio: 'yes',
-          trans_has_audio: 'yes',
-          sort: 'random',
-          page: 1
-        }
-      });
-
-      if (isMounted.current) {
-        setState(s => ({
-          ...s,
-          sentences: [...s.sentences, ...response.data.results], // Append new sentences
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching more sentences:', error);
-    }
+    await fetchSentences(true);
   };
 
   const stopAudio = async () => {
@@ -459,7 +438,7 @@ export default function App() {
           {/* Reload Button */}
           <TouchableOpacity
             style={styles.reloadButton}
-            onPress={fetchSentences}
+            onPress={() => fetchSentences()}
           >
             <Text style={styles.buttonText}>Reload Sentences</Text>
           </TouchableOpacity>
