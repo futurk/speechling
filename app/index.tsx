@@ -407,6 +407,7 @@ export default function App() {
 
   return (
     <View style={styles.container}>
+      {/* Language Selectors */}
       <View style={styles.languageSelector}>
         <Picker
           selectedValue={state.fromLang}
@@ -441,6 +442,7 @@ export default function App() {
         </Picker>
       </View>
 
+      {/* Reload Button */}
       <TouchableOpacity
         style={styles.reloadButton}
         onPress={fetchSentences}
@@ -448,15 +450,17 @@ export default function App() {
         <Text style={styles.buttonText}>Reload Sentences</Text>
       </TouchableOpacity>
 
+      {/* Sentence Card */}
       {currentSentence.text && (
         <View style={styles.card}>
+          {/* Sentence and Translation */}
           <View style={styles.sentenceContainer}>
-            {/* Sentence Text */}
-            <Text style={styles.sentenceText}>{currentSentence.text}</Text>
-            {/* Translation Text */}
-            {state.showTranslation && translation?.text && (
-              <Text style={styles.translationText}>{translation.text}</Text>
-            )}
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+              <Text style={styles.sentenceText}>{currentSentence.text}</Text>
+              {state.showTranslation && translation?.text && (
+                <Text style={styles.translationText}>{translation.text}</Text>
+              )}
+            </ScrollView>
           </View>
 
           {/* Playback Controls */}
@@ -476,8 +480,8 @@ export default function App() {
 
           {/* Delay Controls */}
           <View style={styles.delayControls}>
-            <View>
-              <Text>After Sentence: {state.sentenceDelay}s</Text>
+            <View style={styles.delayGroup}>
+              <Text style={styles.delayLabel}>After Sentence: {state.sentenceDelay}s</Text>
               <Slider
                 minimumValue={1}
                 maximumValue={10}
@@ -485,10 +489,13 @@ export default function App() {
                 value={state.sentenceDelay}
                 onValueChange={handleSentenceDelayChange}
                 style={styles.slider}
+                minimumTrackTintColor="#3498db"
+                maximumTrackTintColor="#ecf0f1"
+                thumbTintColor="#3498db"
               />
             </View>
-            <View>
-              <Text>After Translation: {state.translationDelay}s</Text>
+            <View style={styles.delayGroup}>
+              <Text style={styles.delayLabel}>After Translation: {state.translationDelay}s</Text>
               <Slider
                 minimumValue={1}
                 maximumValue={10}
@@ -496,27 +503,32 @@ export default function App() {
                 value={state.translationDelay}
                 onValueChange={handleTranslationDelayChange}
                 style={styles.slider}
+                minimumTrackTintColor="#3498db"
+                maximumTrackTintColor="#ecf0f1"
+                thumbTintColor="#3498db"
               />
             </View>
           </View>
-          {/* Repeat Button */}
-          <TouchableOpacity
-            style={styles.repeatButton}
-            onPress={() => setState(s => ({ ...s, repeatOriginalAfterTranslation: !s.repeatOriginalAfterTranslation }))}
-          >
-            <Text style={styles.buttonText}>
-              {state.repeatOriginalAfterTranslation ? '✅ Repeat Original' : '🔁 Repeat Original'}
-            </Text>
-          </TouchableOpacity>
-          {/* Translation Toggle */}
-          <TouchableOpacity
-            style={styles.translationButton}
-            onPress={() => setState(s => ({ ...s, showTranslation: !s.showTranslation }))}
-          >
-            <Text style={styles.buttonText}>
-              {state.showTranslation ? 'Hide Translation' : 'Show Translation'}
-            </Text>
-          </TouchableOpacity>
+
+          {/* Repeat and Translation Toggles */}
+          <View style={styles.toggleContainer}>
+            <TouchableOpacity
+              style={[styles.toggleButton, state.repeatOriginalAfterTranslation && styles.toggleButtonActive]}
+              onPress={() => setState(s => ({ ...s, repeatOriginalAfterTranslation: !s.repeatOriginalAfterTranslation }))}
+            >
+              <Text style={styles.toggleButtonText}>
+                {state.repeatOriginalAfterTranslation ? '✅ Repeat' : '🔁 Repeat'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.toggleButton, state.showTranslation && styles.toggleButtonActive]}
+              onPress={() => setState(s => ({ ...s, showTranslation: !s.showTranslation }))}
+            >
+              <Text style={styles.toggleButtonText}>
+                {state.showTranslation ? '✅ Translation' : '🌐 Translation'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
     </View>
@@ -524,81 +536,116 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  sentenceContainer: {
-    height: 100, // Fixed height for the sentence container
-  },
   container: {
     flex: 1,
-    padding: 20,
+    padding: 16,
     backgroundColor: '#f5f5f5',
   },
   languageSelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   picker: {
     height: 50,
     width: '48%',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   reloadButton: {
     backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
     alignItems: 'center',
+    elevation: 2,
   },
   card: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 20,
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    elevation: 5,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  sentenceContainer: {
+    height: 150, // Fixed height
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scrollContent: {
+    flexGrow: 1, // Allow content to expand vertically
+    justifyContent: 'center', // Center content vertically
+    alignItems: 'center', // Center content horizontally
   },
   sentenceText: {
     fontSize: 20,
     textAlign: 'center',
-    color: '#34495e',
+    color: '#2c3e50',
+    fontWeight: '500',
   },
   translationText: {
     fontSize: 16,
     color: '#7f8c8d',
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 8,
     fontStyle: 'italic',
   },
   playbackControls: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginVertical: 20,
+    marginVertical: 16,
   },
   controlText: {
     fontSize: 32,
-    color: '#2c3e50',
+    color: '#3498db',
+  },
+  delayControls: {
+    marginBottom: 16,
+  },
+  delayGroup: {
+    marginBottom: 12,
+  },
+  delayLabel: {
+    fontSize: 14,
+    color: '#7f8c8d',
+    marginBottom: 4,
   },
   slider: {
     width: '100%',
     height: 40,
   },
-  delayControls: {
-    marginBottom: 10
+  toggleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
   },
-  repeatButton: {
-    backgroundColor: '#8e44ad',
-    padding: 15,
-    borderRadius: 10,
+  toggleButton: {
+    flex: 1,
+    backgroundColor: '#ecf0f1',
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
-    marginTop: 10,
+    marginHorizontal: 4,
   },
-  translationButton: {
-    backgroundColor: '#27ae60',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 10,
+  toggleButtonActive: {
+    backgroundColor: '#3498db',
+  },
+  toggleButtonText: {
+    color: '#2c3e50',
+    fontWeight: '500',
   },
   buttonText: {
-    color: 'white',
+    color: '#fff',
     fontWeight: 'bold',
   },
 });
