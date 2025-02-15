@@ -489,9 +489,9 @@ export default function App() {
                 value={state.sentenceDelay}
                 onValueChange={handleSentenceDelayChange}
                 style={styles.slider}
-                minimumTrackTintColor="#3498db"
-                maximumTrackTintColor="#ecf0f1"
-                thumbTintColor="#3498db"
+                minimumTrackTintColor="#4A90E2"
+                maximumTrackTintColor="#ECF0F1"
+                thumbTintColor="#4A90E2"
               />
             </View>
             <View style={styles.delayGroup}>
@@ -503,9 +503,9 @@ export default function App() {
                 value={state.translationDelay}
                 onValueChange={handleTranslationDelayChange}
                 style={styles.slider}
-                minimumTrackTintColor="#3498db"
-                maximumTrackTintColor="#ecf0f1"
-                thumbTintColor="#3498db"
+                minimumTrackTintColor="#4A90E2"
+                maximumTrackTintColor="#ECF0F1"
+                thumbTintColor="#4A90E2"
               />
             </View>
           </View>
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F8F9FA', // Light gray background
   },
   languageSelector: {
     flexDirection: 'row',
@@ -549,13 +549,13 @@ const styles = StyleSheet.create({
   picker: {
     height: 50,
     width: '48%',
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF', // White background
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#E0E0E0', // Light gray border
   },
   reloadButton: {
-    backgroundColor: '#3498db',
+    backgroundColor: '#4A90E2', // Primary blue
     padding: 12,
     borderRadius: 8,
     marginBottom: 16,
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF', // White background
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
@@ -573,14 +573,14 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   sentenceContainer: {
-    height: 150, // Fixed height
-    marginBottom: 16,
+    height: 120, // Fixed height
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#E0E0E0', // Light gray border
     borderRadius: 8,
     padding: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center', // Center content vertically
+    alignItems: 'center', // Center content horizontally
   },
   scrollContent: {
     flexGrow: 1, // Allow content to expand vertically
@@ -590,12 +590,12 @@ const styles = StyleSheet.create({
   sentenceText: {
     fontSize: 20,
     textAlign: 'center',
-    color: '#2c3e50',
+    color: '#2C3E50', // Dark gray text
     fontWeight: '500',
   },
   translationText: {
     fontSize: 16,
-    color: '#7f8c8d',
+    color: '#7F8C8D', // Light gray text
     textAlign: 'center',
     marginTop: 8,
     fontStyle: 'italic',
@@ -603,21 +603,21 @@ const styles = StyleSheet.create({
   playbackControls: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginVertical: 16,
+    marginBottom: 20,
   },
   controlText: {
     fontSize: 32,
-    color: '#3498db',
+    color: '#4A90E2', // Primary blue
   },
   delayControls: {
-    marginBottom: 16,
+    marginTop: 20,
   },
   delayGroup: {
     marginBottom: 12,
   },
   delayLabel: {
     fontSize: 14,
-    color: '#7f8c8d',
+    color: '#7F8C8D', // Light gray text
     marginBottom: 4,
   },
   slider: {
@@ -631,21 +631,21 @@ const styles = StyleSheet.create({
   },
   toggleButton: {
     flex: 1,
-    backgroundColor: '#ecf0f1',
+    backgroundColor: '#ECF0F1', // Light gray (inactive)
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
     marginHorizontal: 4,
   },
   toggleButtonActive: {
-    backgroundColor: '#3498db',
+    backgroundColor: '#4A90E2', // Primary blue (active)
   },
   toggleButtonText: {
-    color: '#2c3e50',
+    color: '#2C3E50', // Dark gray text
     fontWeight: '500',
   },
   buttonText: {
-    color: '#fff',
+    color: '#FFFFFF', // White text
     fontWeight: 'bold',
   },
 });
