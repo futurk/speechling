@@ -1,12 +1,19 @@
 import { Stack } from "expo-router";
+import { useState, useEffect } from "react";
 
 export default function RootLayout() {
+  const title = "Listen2Bea: practice your listening comprehension everyday";
+
+  useEffect(() => {
+    document.title = title;
+  }, [title]);
+
   return (
     <Stack>
       <Stack.Screen
-        name="index" // This corresponds to the file name `index.tsx`
+        name="index"
         options={{
-          title: "Speechling", // Set the desired title for the header
+          title: title,
         }}
       />
     </Stack>
