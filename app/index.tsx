@@ -628,14 +628,13 @@ const styles = StyleSheet.create({
   playbackControls: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: 20,
   },
   controlText: {
     fontSize: 32,
     color: '#4A90E2', // Primary blue
   },
   delayControls: {
-    marginTop: 20,
+    marginTop: 16,
   },
   delayGroup: {
     marginBottom: 12,
@@ -675,7 +674,7 @@ const styles = StyleSheet.create({
   },
   creditsContainer: {
     marginTop: 16,
-    paddingVertical: 8,
+    paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0', // Light gray border
     alignItems: 'center',
