@@ -61,8 +61,8 @@ export default function App() {
     isLoading: true, // change to false when testing
     isPlaying: false,
     showTranslation: false,
-    sentenceDelay: 3,
-    translationDelay: 2,
+    sentenceDelay: 1,
+    translationDelay: 1,
     sound: null,
     translationSound: null,
     repeatOriginalAfterTranslation: true,
