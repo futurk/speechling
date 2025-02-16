@@ -125,7 +125,9 @@ export default function App() {
 
   const fetchSentences = async (append = false) => {
     try {
-      setState(s => ({ ...s, isLoading: true }));
+      if (!append) {
+        setState(s => ({ ...s, isLoading: true }));
+      }
 
       const params: Record<string, string> = {
         from: state.fromLang,
