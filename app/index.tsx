@@ -400,48 +400,50 @@ export default function App() {
         </View>
       ) : (
         <>
-          {/* Language Selectors */}
-          <View style={styles.languageSelector}>
-            <Picker
-              selectedValue={state.fromLang}
-              style={styles.picker}
-              onValueChange={(value: LanguageCode) =>
-                setState(s => ({ ...s, fromLang: value }))
-              }
-            >
-              {Object.entries(LANGUAGES).map(([code, name]) => (
-                <Picker.Item
-                  key={code}
-                  label={`Practice: ${name}`}
-                  value={code}
-                />
-              ))}
-            </Picker>
+          <View>
+            {/* Language Selectors */}
+            <View style={styles.languageSelector}>
+              <Picker
+                selectedValue={state.fromLang}
+                style={styles.picker}
+                onValueChange={(value: LanguageCode) =>
+                  setState(s => ({ ...s, fromLang: value }))
+                }
+              >
+                {Object.entries(LANGUAGES).map(([code, name]) => (
+                  <Picker.Item
+                    key={code}
+                    label={`Practice: ${name}`}
+                    value={code}
+                  />
+                ))}
+              </Picker>
 
-            <Picker
-              selectedValue={state.toLang}
-              style={styles.picker}
-              onValueChange={(value: LanguageCode) =>
-                setState(s => ({ ...s, toLang: value }))
-              }
+              <Picker
+                selectedValue={state.toLang}
+                style={styles.picker}
+                onValueChange={(value: LanguageCode) =>
+                  setState(s => ({ ...s, toLang: value }))
+                }
+              >
+                {Object.entries(LANGUAGES).map(([code, name]) => (
+                  <Picker.Item
+                    key={code}
+                    label={`Translate: ${name}`}
+                    value={code}
+                  />
+                ))}
+              </Picker>
+            </View>
+
+            {/* Reload Button */}
+            <TouchableOpacity
+              style={styles.reloadButton}
+              onPress={() => fetchSentences()}
             >
-              {Object.entries(LANGUAGES).map(([code, name]) => (
-                <Picker.Item
-                  key={code}
-                  label={`Translate: ${name}`}
-                  value={code}
-                />
-              ))}
-            </Picker>
+              <Text style={styles.buttonText}>Reload Sentences</Text>
+            </TouchableOpacity>
           </View>
-
-          {/* Reload Button */}
-          <TouchableOpacity
-            style={styles.reloadButton}
-            onPress={() => fetchSentences()}
-          >
-            <Text style={styles.buttonText}>Reload Sentences</Text>
-          </TouchableOpacity>
 
           {/* Sentence Card */}
           {currentSentence.text && (
@@ -455,6 +457,62 @@ export default function App() {
                   )}
                 </ScrollView>
               </View>
+
+              {/* Delay Controls and Toggle Container */}
+              <View style={styles.playbackSettings}>
+                {/* First Column: Delay Controls */}
+                <View style={styles.delayControls}>
+                  <View style={styles.delayGroup}>
+                    <Text style={styles.delayLabel}>Delay after sentence: {state.sentenceDelay}s</Text>
+                    <Slider
+                      minimumValue={1}
+                      maximumValue={5}
+                      step={1}
+                      value={state.sentenceDelay}
+                      onValueChange={handleSentenceDelayChange}
+                      style={styles.slider}
+                      minimumTrackTintColor="#4A90E2"
+                      maximumTrackTintColor="#ECF0F1"
+                      thumbTintColor="#4A90E2"
+                    />
+                  </View>
+                  <View style={styles.delayGroup}>
+                    <Text style={styles.delayLabel}>Delay after translation: {state.translationDelay}s</Text>
+                    <Slider
+                      minimumValue={1}
+                      maximumValue={5}
+                      step={1}
+                      value={state.translationDelay}
+                      onValueChange={handleTranslationDelayChange}
+                      style={styles.slider}
+                      minimumTrackTintColor="#4A90E2"
+                      maximumTrackTintColor="#ECF0F1"
+                      thumbTintColor="#4A90E2"
+                    />
+                  </View>
+                </View>
+
+                {/* Second Column: Toggle Container */}
+                <View style={styles.toggleContainer}>
+                  <TouchableOpacity
+                    style={[styles.toggleButton, state.repeatOriginalAfterTranslation && styles.toggleButtonActive]}
+                    onPress={() => setState(s => ({ ...s, repeatOriginalAfterTranslation: !s.repeatOriginalAfterTranslation }))}
+                  >
+                    <Text style={styles.toggleButtonText}>
+                      {state.repeatOriginalAfterTranslation ? '✅ Repeat' : '🔁 Repeat'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.toggleButton, state.showTranslation && styles.toggleButtonActive]}
+                    onPress={() => setState(s => ({ ...s, showTranslation: !s.showTranslation }))}
+                  >
+                    <Text style={styles.toggleButtonText}>
+                      {state.showTranslation ? '✅ Hide Translation' : '🌐 Show Translation'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
 
               {/* Playback Controls */}
               <View style={styles.playbackControls}>
@@ -471,57 +529,6 @@ export default function App() {
                 </TouchableOpacity>
               </View>
 
-              {/* Delay Controls */}
-              <View style={styles.delayControls}>
-                <View style={styles.delayGroup}>
-                  <Text style={styles.delayLabel}>Delay after sentence: {state.sentenceDelay}s</Text>
-                  <Slider
-                    minimumValue={1}
-                    maximumValue={10}
-                    step={1}
-                    value={state.sentenceDelay}
-                    onValueChange={handleSentenceDelayChange}
-                    style={styles.slider}
-                    minimumTrackTintColor="#4A90E2"
-                    maximumTrackTintColor="#ECF0F1"
-                    thumbTintColor="#4A90E2"
-                  />
-                </View>
-                <View style={styles.delayGroup}>
-                  <Text style={styles.delayLabel}>Delay after translation: {state.translationDelay}s</Text>
-                  <Slider
-                    minimumValue={1}
-                    maximumValue={10}
-                    step={1}
-                    value={state.translationDelay}
-                    onValueChange={handleTranslationDelayChange}
-                    style={styles.slider}
-                    minimumTrackTintColor="#4A90E2"
-                    maximumTrackTintColor="#ECF0F1"
-                    thumbTintColor="#4A90E2"
-                  />
-                </View>
-              </View>
-
-              {/* Repeat and Translation Toggles */}
-              <View style={styles.toggleContainer}>
-                <TouchableOpacity
-                  style={[styles.toggleButton, state.repeatOriginalAfterTranslation && styles.toggleButtonActive]}
-                  onPress={() => setState(s => ({ ...s, repeatOriginalAfterTranslation: !s.repeatOriginalAfterTranslation }))}
-                >
-                  <Text style={styles.toggleButtonText}>
-                    {state.repeatOriginalAfterTranslation ? '✅ Repeat' : '🔁 Repeat'}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.toggleButton, state.showTranslation && styles.toggleButtonActive]}
-                  onPress={() => setState(s => ({ ...s, showTranslation: !s.showTranslation }))}
-                >
-                  <Text style={styles.toggleButtonText}>
-                    {state.showTranslation ? '✅ Hide Translation' : '🌐 Show Translation'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
             </View>
           )}
         </>
@@ -551,6 +558,11 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  playbackSettings: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -588,7 +600,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   card: {
-    backgroundColor: '#FFFFFF', // White background
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
@@ -628,20 +640,24 @@ const styles = StyleSheet.create({
   playbackControls: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    marginBottom: 15,
   },
   controlText: {
     fontSize: 32,
-    color: '#4A90E2', // Primary blue
+    color: '#4A90E2',
   },
   delayControls: {
-    marginTop: 16,
+    flex: 1,
+    marginRight: 4,
   },
   delayGroup: {
     marginBottom: 12,
+    height: 60, // Set a fixed height to match toggle buttons
+    justifyContent: 'center',
   },
   delayLabel: {
     fontSize: 14,
-    color: '#7F8C8D', // Light gray text
+    color: '#7F8C8D',
     marginBottom: 4,
   },
   slider: {
@@ -649,23 +665,24 @@ const styles = StyleSheet.create({
     height: 40,
   },
   toggleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
+    flex: 1,
+    marginLeft: 4,
+    justifyContent: 'center',
   },
   toggleButton: {
-    flex: 1,
-    backgroundColor: '#ECF0F1', // Light gray (inactive)
+    height: 60, // Match the height with `delayGroup`
+    backgroundColor: '#ECF0F1',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
-    marginHorizontal: 4,
+    justifyContent: 'center', // Center content within button
+    marginBottom: 12,
   },
   toggleButtonActive: {
-    backgroundColor: '#4A90E2', // Primary blue (active)
+    backgroundColor: '#4A90E2',
   },
   toggleButtonText: {
-    color: '#2C3E50', // Dark gray text
+    color: '#2C3E50',
     fontWeight: '500',
   },
   buttonText: {
