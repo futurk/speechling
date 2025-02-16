@@ -39,6 +39,8 @@ interface AppState {
   sound: Audio.Sound | null;
   translationSound: Audio.Sound | null;
   repeatOriginalAfterTranslation: boolean;
+  isAudioLoading: boolean;
+  isAudioPlaying: boolean;
 }
 
 const LANGUAGES = {
@@ -66,6 +68,8 @@ export default function App() {
     sound: null,
     translationSound: null,
     repeatOriginalAfterTranslation: true,
+    isAudioLoading: false,
+    isAudioPlaying: false,
   });
 
   const timerRef = useRef<number | null>(null); // Use `number` instead of `Timeout`
@@ -179,7 +183,7 @@ export default function App() {
     } catch (error) {
       console.error('Error stopping audio:', error);
     } finally {
-      setState(s => ({ ...s, sound: null, translationSound: null }));
+      setState(s => ({ ...s, sound: null, translationSound: null, isAudioLoading: false, isAudioPlaying: false }));
     }
   };
 
@@ -191,10 +195,23 @@ export default function App() {
     console.log('Attempting to play audio from URL:', audioUrl);
 
     try {
+      // Set state
+      setState(s => ({ ...s, isAudioLoading: false }));
+
+      // Start a timeout before switching the state
+      const loadingTimeout = setTimeout(() => {
+        if (isMounted.current) {
+          setState(s => ({ ...s, isAudioLoading: true }));
+        }
+      }, 1500); // 3 seconds
+
       const { sound } = await Audio.Sound.createAsync(
         { uri: audioUrl },
         { shouldPlay: true }
       );
+
+      // Clear the loading timeout
+      clearTimeout(loadingTimeout);
 
       if (signal?.aborted) {
         await sound.unloadAsync();
@@ -202,37 +219,46 @@ export default function App() {
       }
 
       if (isMounted.current) {
-        setState(s => ({ ...s, [isTranslation ? 'translationSound' : 'sound']: sound }));
+        setState(s => ({
+          ...s,
+          [isTranslation ? 'translationSound' : 'sound']: sound,
+          isAudioLoading: false,
+          isAudioPlaying: true,
+        }));
       }
 
       return new Promise<void>((resolve, reject) => {
         const onAbort = () => {
           sound.unloadAsync()
-            .then(() => resolve()) // Explicitly resolve with void
-            .catch(() => resolve()); // Explicitly resolve with void
+            .then(() => resolve())
+            .catch(() => resolve());
           reject(new DOMException('Aborted', 'AbortError'));
         };
 
         signal?.addEventListener('abort', onAbort);
 
         sound.setOnPlaybackStatusUpdate((status: AVPlaybackStatus) => {
-          if (!status.isLoaded) return; // Skip if status is not loaded
+          if (!status.isLoaded) return;
 
           if ('didJustFinish' in status && status.didJustFinish) {
             console.log('Audio playback finished');
             signal?.removeEventListener('abort', onAbort);
-            resolve(); // Resolve with void
+            setState(s => ({ ...s, isAudioPlaying: false }));
+            resolve();
           }
 
           if ('error' in status) {
             console.error('Audio playback error:', status.error);
             signal?.removeEventListener('abort', onAbort);
+            setState(s => ({ ...s, isAudioLoading: false, isAudioPlaying: false }));
             reject(status.error);
           }
         });
       });
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return;
+      console.error('Error playing audio:', error);
+      setState(s => ({ ...s, isAudioLoading: false, isAudioPlaying: false }));
       throw error;
     }
   };
@@ -247,6 +273,16 @@ export default function App() {
       }
     }
     return null;
+  };
+
+  const delay = (seconds: number, signal?: AbortSignal): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(resolve, seconds * 1000);
+      signal?.addEventListener('abort', () => {
+        clearTimeout(timeout);
+        reject(new DOMException('Aborted', 'AbortError'));
+      });
+    });
   };
 
   const handleAutoPlay = async (currentIndex: number) => {
@@ -288,14 +324,7 @@ export default function App() {
 
       // Sentence delay
       console.log('Sentence delay is going to finish in:', sentenceDelayRef.current)
-      await new Promise((resolve, reject) => {
-        timerRef.current = setTimeout(resolve, sentenceDelayRef.current * 1000) as unknown as number;
-        controller.signal.addEventListener('abort', () => {
-          clearTimeout(timerRef.current!);
-          timerRef.current = null;
-          reject(new DOMException('Aborted', 'AbortError'));
-        });
-      });
+      await delay(sentenceDelayRef.current, controller.signal);
 
       if (controller.signal.aborted) return;
 
@@ -308,14 +337,7 @@ export default function App() {
 
       // Translation delay
       console.log('Translation delay is going to finish in:', translationDelayRef.current)
-      await new Promise((resolve, reject) => {
-        timerRef.current = setTimeout(resolve, translationDelayRef.current * 1000) as unknown as number;
-        controller.signal.addEventListener('abort', () => {
-          clearTimeout(timerRef.current!);
-          timerRef.current = null;
-          reject(new DOMException('Aborted', 'AbortError'));
-        });
-      });
+      await delay(translationDelayRef.current, controller.signal);
 
       // Repeat original audio if enabled
       console.log(repeatOriginalAfterTranslationRef.current, currentSentence.audios?.length);
@@ -522,9 +544,13 @@ export default function App() {
                   <Text style={styles.controlText}>⏮</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={togglePlayback}>
-                  <Text style={styles.controlText}>
-                    {state.isPlaying ? '⏸' : '▶'}
-                  </Text>
+                  {state.isAudioLoading ? (
+                    <ActivityIndicator size="small" color="#4A90E2" /> // Loading icon
+                  ) : state.isAudioPlaying ? (
+                    <Text style={styles.controlText}>🔊</Text> // Audio playing icon
+                  ) : (
+                    <Text style={styles.controlText}>{state.isPlaying ? '⏸' : '▶'}</Text> // Play/pause icon
+                  )}
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => changeIndex(1)}>
                   <Text style={styles.controlText}>⏭</Text>
