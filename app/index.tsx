@@ -561,7 +561,7 @@ export default function App() {
           Developed by{' '}
           <Text
             style={styles.linkText}
-            onPress={() => Linking.openURL('https://github.com/futurk')}
+            onPress={() => Linking.openURL('https://www.linkedin.com/in/furkanunluturk')}
           >
             Furkan Ünlütürk
           </Text>{' '}
@@ -572,6 +572,7 @@ export default function App() {
           >
             Tatoeba
           </Text>
+          {'\n'} Please consider contributing or donating to Tatoeba if you find this tool helpful.
         </Text>
       </View>
     </ScrollView>
@@ -720,6 +721,8 @@ const styles = StyleSheet.create({
   creditsText: {
     fontSize: 14,
     color: '#7F8C8D', // Light gray text
+    textAlign: 'center',
+    lineHeight: 20,
   },
   linkText: {
     color: '#4A90E2', // Primary blue
