@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 import { useState, useEffect } from "react";
 
 export default function RootLayout() {
-  const title = "Listen2Bea: practice your listening comprehension everyday";
+  const title = "Listen2Bea: practice listening comprehension on the way";
 
   useEffect(() => {
     document.title = title;
