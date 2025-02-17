@@ -305,13 +305,7 @@ export default function App() {
       console.log('', currentSentence);
 
       // Add initial cooldown
-      await new Promise((resolve, reject) => {
-        const timeout = setTimeout(resolve, 500);
-        controller.signal.addEventListener('abort', () => {
-          clearTimeout(timeout);
-          reject(new DOMException('Aborted', 'AbortError'));
-        });
-      });
+      await delay(0.5, controller.signal);
 
       if (controller.signal.aborted || playbackId !== currentPlaybackId.current) return;
 
@@ -320,10 +314,12 @@ export default function App() {
       if (currentSentence.audios?.length) {
         await playAudio(currentSentence.audios[0].id, false, controller.signal);
         if (controller.signal.aborted) return;
+      } else {
+        console.warn('No sentence audio available');
       }
 
       // Sentence delay
-      console.log('Sentence delay is going to finish in:', sentenceDelayRef.current)
+      console.log('Sentence delay started - ', sentenceDelayRef.current)
       await delay(sentenceDelayRef.current, controller.signal);
 
       if (controller.signal.aborted) return;
@@ -333,10 +329,12 @@ export default function App() {
       if (translation?.audios?.length) {
         await playAudio(translation.audios[0].id, true, controller.signal);
         if (controller.signal.aborted) return;
+      } else {
+        console.warn('No translation audio available');
       }
 
       // Translation delay
-      console.log('Translation delay is going to finish in:', translationDelayRef.current)
+      console.log('Translation delay started - ', translationDelayRef.current)
       await delay(translationDelayRef.current, controller.signal);
 
       // Repeat original audio if enabled
@@ -345,15 +343,10 @@ export default function App() {
         // Play original audio
         await playAudio(currentSentence.audios[0].id, false, controller.signal);
         if (controller.signal.aborted) return;
+
         // Sentence delay
-        await new Promise((resolve, reject) => {
-          timerRef.current = setTimeout(resolve, sentenceDelayRef.current * 1000) as unknown as number;
-          controller.signal.addEventListener('abort', () => {
-            clearTimeout(timerRef.current!);
-            timerRef.current = null;
-            reject(new DOMException('Aborted', 'AbortError'));
-          });
-        });
+        console.log('Sentence delay started again - ', sentenceDelayRef.current)
+        await delay(sentenceDelayRef.current, controller.signal);
       }
 
       if (!isMounted.current || !state.isPlaying) return;
