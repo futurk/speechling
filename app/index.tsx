@@ -631,7 +631,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   sentenceContainer: {
-    height: 120, // Fixed height
+    height: 150, // Fixed height
     marginBottom: 20,
     borderWidth: 1,
     borderColor: '#E0E0E0', // Light gray border
