@@ -405,8 +405,8 @@ export default function App() {
     }
   };
 
-  const currentSentence = state.sentences[state.currentIndex] || {};
-  const translation = currentSentence.translations?.[0]?.[0];
+  const currentSentence = state.sentences[state.currentIndex];
+  const translation = currentSentence ? findTranslationWithAudio(currentSentence.translations) : null;
 
   return (
     <ScrollView style={styles.container}>
