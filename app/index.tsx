@@ -203,7 +203,7 @@ export default function App() {
         if (isMounted.current) {
           setState(s => ({ ...s, isAudioLoading: true }));
         }
-      }, 1500); // 3 seconds
+      }, 2000);
 
       const { sound } = await Audio.Sound.createAsync(
         { uri: audioUrl },
