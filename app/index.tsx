@@ -582,6 +582,7 @@ export default function App() {
       {/* Credits Footer */}
       <View style={styles.creditsContainer}>
         <Text style={styles.creditsText}>
+          The autoplay stops at every 10+50i sentence automatically. You can simply restart it to continue from where you left off.{'\n'}
           Developed by{' '}
           <Text
             style={styles.linkText}
