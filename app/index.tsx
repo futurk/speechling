@@ -130,6 +130,13 @@ export default function App() {
   const fetchSentences = async (append = false) => {
     try {
       if (!append) {
+        // abort any playing audio and clear timers
+        playbackController.current?.abort();
+        if (timerRef.current !== null) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+        await stopAudio();
         setState(s => ({ ...s, isLoading: true }));
       }
 
