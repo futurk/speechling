@@ -474,6 +474,13 @@ export default function App() {
             <View style={styles.card}>
               {/* Sentence and Translation */}
               <View style={styles.sentenceContainer}>
+                {/* Audio Playing Icon */}
+                {state.isAudioPlaying && (
+                  <View style={styles.audioIconContainer}>
+                    <Text style={styles.controlText}>🔊</Text>
+                  </View>
+                )}
+
                 <ScrollView contentContainerStyle={styles.scrollContent}>
                   <Text style={styles.sentenceText}>{currentSentence.text}</Text>
                   {state.showTranslation && translation?.text && (
@@ -546,8 +553,6 @@ export default function App() {
                 <TouchableOpacity onPress={togglePlayback}>
                   {state.isAudioLoading ? (
                     <ActivityIndicator size="small" color="#4A90E2" /> // Loading icon
-                  ) : state.isAudioPlaying ? (
-                    <Text style={styles.controlText}>🔊</Text> // Audio playing icon
                   ) : (
                     <Text style={styles.controlText}>{state.isPlaying ? '⏸' : '▶'}</Text> // Play/pause icon
                   )}
@@ -587,6 +592,11 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  audioIconContainer: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+  },
   playbackSettings: {
     flexDirection: 'row',
     justifyContent: 'space-between',
