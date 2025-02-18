@@ -582,8 +582,9 @@ export default function App() {
       {/* Credits Footer */}
       <View style={styles.creditsContainer}>
         <Text style={styles.creditsText}>
-          The autoplay stops at every 10+50i sentence automatically. You can simply restart it to continue from where you left off.{'\n'}
-          Developed by{' '}
+          * The autoplay feature is designed to stop at every 10+50i sentence automatically. You can simply restart it to continue from your last position.
+          {'\n'}
+          * Developed by{' '}
           <Text
             style={styles.linkText}
             onPress={() => Linking.openURL('https://www.linkedin.com/in/furkanunluturk')}
@@ -597,7 +598,8 @@ export default function App() {
           >
             Tatoeba
           </Text>
-          {'\n'} Please consider contributing or donating to Tatoeba if you find this tool helpful.
+          .{' '}
+          Please consider contributing or donating to Tatoeba if you find this tool helpful.
         </Text>
       </View>
     </ScrollView>
@@ -750,8 +752,7 @@ const styles = StyleSheet.create({
   },
   creditsText: {
     fontSize: 14,
-    color: '#7F8C8D', // Light gray text
-    textAlign: 'center',
+    color: '#7F8C8D',
     lineHeight: 20,
   },
   linkText: {
