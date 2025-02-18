@@ -158,7 +158,7 @@ export default function App() {
           sentences: append ? [...s.sentences, ...response.data.results] : response.data.results,
           isLoading: false,
           currentIndex: append ? s.currentIndex : 0,
-          isPlaying: false,
+          isPlaying: append ? s.isPlaying : false,
         }));
       }
     } catch (error) {
