@@ -43,6 +43,7 @@ interface AppState {
   isAudioPlaying: boolean;
 }
 
+// ISO 639-3 language codes
 const LANGUAGES = {
   deu: 'German',
   eng: 'English',
@@ -51,6 +52,17 @@ const LANGUAGES = {
   ita: 'Italian',
   jpn: 'Japanese',
   tur: 'Turkish',
+  rus: 'Russian',
+  ara: 'Arabic',
+  cmn: 'Chinese (Mandarin)',
+  por: 'Portuguese',
+  hun: 'Hungarian',
+  heb: 'Hebrew',
+  nld: 'Dutch',
+  ukr: 'Ukrainian',
+  pol: 'Polish',
+  vie: 'Vietnamese',
+  kor: 'Korean'
 };
 
 export default function App() {
