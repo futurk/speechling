@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 
 export default function RootLayout() {
   const title = "Listen2Bea: practice listening comprehension on the way";
@@ -14,6 +14,18 @@ export default function RootLayout() {
         name="index"
         options={{
           title: title,
+        }}
+      />
+      <Stack.Screen
+        name="listen"
+        options={{
+          title: title,
+        }}
+      />
+      <Stack.Screen
+        name="trans"
+        options={{
+          title: "Translation Practice",
         }}
       />
     </Stack>
