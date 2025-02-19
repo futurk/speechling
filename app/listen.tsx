@@ -12,17 +12,7 @@ import Slider from '@react-native-community/slider';
 import { LanguageSelector, LanguageCode } from './components/LanguageSelector';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 import axios from 'axios';
-
-interface Sentence {
-  id: number;
-  text: string;
-  lang: string;
-  audios: Array<{ id: number }>;
-  translations: Array<Array<{
-    text: string;
-    audios: Array<{ id: number }>;
-  }>>;
-}
+import { Sentence } from './constants/types';
 
 interface AppState {
   fromLang: LanguageCode;
@@ -280,7 +270,11 @@ export default function App() {
     }
   };
 
-  const findTranslationWithAudio = (translations: Sentence['translations']) => {
+  const findTranslationWithAudio = (translations: Sentence['translations'] | undefined) => {
+    if (!translations) {
+      return null; // Handle the case where translations are undefined
+    }
+
     for (let i = 0; i < translations.length; i++) {
       for (let j = 0; j < translations[i].length; j++) {
         const translation = translations[i][j];
@@ -289,7 +283,6 @@ export default function App() {
         }
       }
     }
-    return null;
   };
 
   const delay = (seconds: number, signal?: AbortSignal): Promise<void> => {

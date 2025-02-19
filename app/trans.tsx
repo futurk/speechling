@@ -1,17 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
 import { LanguageSelector, LanguageCode } from './components/LanguageSelector';
+import { Sentence } from './constants/types';
 
 const diff = require('diff');
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://tatoeba.org/en/api_v0/search';
-
-interface Sentence {
-    id: number;
-    text: string;
-    lang: string;
-    audios?: Array<{ id: number }>;
-    translations?: Array<Array<Sentence>>;
-}
 
 export default function App() {
     const [nativeLang, setNativeLang] = useState<LanguageCode>('tur');
