@@ -2,17 +2,24 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
 import { LanguageSelector, LanguageCode } from './components/LanguageSelector';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://tatoeba.org/en/api_v0/search';
 const diff = require('diff');
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://tatoeba.org/en/api_v0/search';
+
+interface Sentence {
+    id: number;
+    text: string;
+    lang: string;
+    audios?: Array<{ id: number }>;
+    translations?: Array<Array<Sentence>>;
+}
 
 export default function App() {
     const [nativeLang, setNativeLang] = useState<LanguageCode>('tur');
     const [targetLang, setTargetLang] = useState<LanguageCode>('eng');
-    const [sentences, setSentences] = useState([]);
+    const [sentences, setSentences] = useState<Sentence[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [userTranslation, setUserTranslation] = useState('');
     const [submitted, setSubmitted] = useState(false);
-    const [correctTranslation, setCorrectTranslation] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -25,7 +32,7 @@ export default function App() {
 
             if (data.results?.length > 0) {
                 const validSentences = data.results.filter(
-                    sentence => sentence.translations[0]?.length > 0
+                    (sentence: Sentence) => sentence.translations && sentence.translations[0]?.length > 0
                 );
 
                 if (validSentences.length === 0) {
@@ -33,7 +40,6 @@ export default function App() {
                 } else {
                     setSentences(validSentences);
                     setCurrentIndex(0);
-                    setCorrectTranslation(validSentences[0].translations[0][0].text);
                 }
             } else {
                 setError('No sentences found');
@@ -48,13 +54,12 @@ export default function App() {
 
     const handleSubmit = () => setSubmitted(true);
 
-    const navigateSentence = (direction) => {
+    const navigateSentence = (direction: 'next' | 'prev') => {
         const newIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
         if (newIndex >= 0 && newIndex < sentences.length) {
             setCurrentIndex(newIndex);
             setSubmitted(false);
             setUserTranslation('');
-            setCorrectTranslation(sentences[newIndex].translations[0][0].text);
         }
     };
 
@@ -66,9 +71,11 @@ export default function App() {
         }
     };
 
-    const differences = submitted ? diff.diffWords(userTranslation, correctTranslation) : [];
+    const differences = submitted && sentences[currentIndex].translations
+        ? diff.diffWords(userTranslation, sentences[currentIndex].translations[0][0]?.text || '') // Ensure translations[0][0] exists
+        : [];
 
-    // automatically focus on the input
+    // Automatically focus on the input
     useEffect(() => {
         if (currentIndex < sentences.length - 1) {
             this.translationInput.focus();
@@ -77,7 +84,6 @@ export default function App() {
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-
             {/* Language Selectors */}
             <View style={styles.languageSelector}>
                 <LanguageSelector
