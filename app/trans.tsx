@@ -91,13 +91,12 @@ export default function App() {
 
     const differences = submitted ? diff.diffWords(userTranslation, correctTranslation) : [];
 
-    // Add useEffect to automatically focus on the input when moving to next sentence
+    // automatically focus on the input
     useEffect(() => {
-        if (submitted && currentIndex < sentences.length - 1) {
-            // Automatically focus on the input when moving to next sentence
+        if (currentIndex < sentences.length - 1) {
             this.translationInput.focus();
         }
-    }, [currentIndex, submitted]);
+    }, [sentences, currentIndex]);
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
