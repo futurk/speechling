@@ -1,29 +1,6 @@
-import { Picker } from '@react-native-picker/picker';
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
-
-type LanguageCode = keyof typeof LANGUAGES;
-// ISO 639-3 language codes
-const LANGUAGES = {
-    deu: 'German',
-    eng: 'English',
-    fra: 'French',
-    spa: 'Spanish',
-    ita: 'Italian',
-    jpn: 'Japanese',
-    tur: 'Turkish',
-    rus: 'Russian',
-    ara: 'Arabic',
-    cmn: 'Chinese (Mandarin)',
-    por: 'Portuguese',
-    hun: 'Hungarian',
-    heb: 'Hebrew',
-    nld: 'Dutch',
-    ukr: 'Ukrainian',
-    pol: 'Polish',
-    vie: 'Vietnamese',
-    kor: 'Korean'
-};
+import { LanguageSelector, LanguageCode } from './components/LanguageSelector';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://tatoeba.org/en/api_v0/search';
 const diff = require('diff');
@@ -103,39 +80,17 @@ export default function App() {
 
             {/* Language Selectors */}
             <View style={styles.languageSelector}>
-                <Picker
+                <LanguageSelector
                     selectedValue={targetLang}
-                    style={styles.picker}
-                    onValueChange={(value: LanguageCode) =>
-                        setTargetLang(value)
-                    }
-                >
-                    {Object.entries(LANGUAGES).map(([code, name]) => (
-                        <Picker.Item
-                            key={code}
-                            label={`Target: ${name}`}
-                            value={code}
-                        />
-                    ))}
-                </Picker>
-
-                <Picker
+                    onValueChange={setTargetLang}
+                    label="Target"
+                />
+                <LanguageSelector
                     selectedValue={nativeLang}
-                    style={styles.picker}
-                    onValueChange={(value: LanguageCode) =>
-                        setNativeLang(value)
-                    }
-                >
-                    {Object.entries(LANGUAGES).map(([code, name]) => (
-                        <Picker.Item
-                            key={code}
-                            label={`Native: ${name}`}
-                            value={code}
-                        />
-                    ))}
-                </Picker>
+                    onValueChange={setNativeLang}
+                    label="Native"
+                />
             </View>
-
 
             <Button
                 title={loading ? 'Loading...' : 'Load Sentences'}
@@ -212,14 +167,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginBottom: 16,
-    },
-    picker: {
-        height: 50,
-        width: '48%',
-        backgroundColor: '#FFFFFF', // White background
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#E0E0E0', // Light gray border
     },
     container: {
         flexGrow: 1,

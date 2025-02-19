@@ -9,11 +9,9 @@ import {
   Linking
 } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { Picker } from '@react-native-picker/picker';
+import { LanguageSelector, LanguageCode } from './components/LanguageSelector';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 import axios from 'axios';
-
-type LanguageCode = keyof typeof LANGUAGES;
 
 interface Sentence {
   id: number;
@@ -439,37 +437,16 @@ export default function App() {
           <View>
             {/* Language Selectors */}
             <View style={styles.languageSelector}>
-              <Picker
+              <LanguageSelector
                 selectedValue={state.fromLang}
-                style={styles.picker}
-                onValueChange={(value: LanguageCode) =>
-                  setState(s => ({ ...s, fromLang: value }))
-                }
-              >
-                {Object.entries(LANGUAGES).map(([code, name]) => (
-                  <Picker.Item
-                    key={code}
-                    label={`Practice: ${name}`}
-                    value={code}
-                  />
-                ))}
-              </Picker>
-
-              <Picker
+                onValueChange={(value) => setState(s => ({ ...s, fromLang: value }))}
+                label="Practice"
+              />
+              <LanguageSelector
                 selectedValue={state.toLang}
-                style={styles.picker}
-                onValueChange={(value: LanguageCode) =>
-                  setState(s => ({ ...s, toLang: value }))
-                }
-              >
-                {Object.entries(LANGUAGES).map(([code, name]) => (
-                  <Picker.Item
-                    key={code}
-                    label={`Translate: ${name}`}
-                    value={code}
-                  />
-                ))}
-              </Picker>
+                onValueChange={(value) => setState(s => ({ ...s, toLang: value }))}
+                label="Translate"
+              />
             </View>
 
             {/* Reload Button */}
@@ -636,14 +613,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 16,
-  },
-  picker: {
-    height: 50,
-    width: '48%',
-    backgroundColor: '#FFFFFF', // White background
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E0E0E0', // Light gray border
   },
   reloadButton: {
     backgroundColor: '#4A90E2', // Primary blue
