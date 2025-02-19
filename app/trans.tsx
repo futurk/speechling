@@ -81,8 +81,6 @@ export default function App() {
         }
     };
 
-    const differences = submitted ? diff.diffWords(userTranslation, correctTranslation) : [];
-
     const handleEnterPress = () => {
         if (!submitted) {
             handleSubmit();
@@ -91,6 +89,8 @@ export default function App() {
         }
     };
 
+    const differences = submitted ? diff.diffWords(userTranslation, correctTranslation) : [];
+
     // Add useEffect to automatically focus on the input when moving to next sentence
     useEffect(() => {
         if (submitted && currentIndex < sentences.length - 1) {
@@ -98,7 +98,6 @@ export default function App() {
             this.translationInput.focus();
         }
     }, [currentIndex, submitted]);
-
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -149,6 +148,10 @@ export default function App() {
 
             {sentences.length > 0 && (
                 <View style={styles.exerciseContainer}>
+                    <Text style={styles.tracker}>
+                        {currentIndex + 1} / {sentences.length}
+                    </Text>
+
                     <Text style={styles.sentence}>{sentences[currentIndex].text}</Text>
 
                     <TextInput
@@ -200,6 +203,12 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+    tracker: {
+        fontSize: 16,
+        textAlign: 'center',
+        marginBottom: 10,
+        color: '#666',
+    },
     languageSelector: {
         flexDirection: 'row',
         justifyContent: 'space-between',
