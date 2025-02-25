@@ -65,7 +65,7 @@ export default function App() {
     };
 
     const differences = submitted && sentences[currentIndex].translations
-        ? diff.diffWords(userTranslation, sentences[currentIndex].translations[0][0]?.text || '') // Ensure translations[0][0] exists
+        ? diff.diffWords(userTranslation, sentences[currentIndex].translations[0][0]?.text || '', { ignoreCase: true }) // Ensure translations[0][0] exists
         : [];
 
     // Automatically focus on the input
