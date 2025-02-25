@@ -122,6 +122,7 @@ export default function App() {
                         onSubmitEditing={handleEnterPress}
                         returnKeyType={submitted ? 'next' : 'done'}
                         blurOnSubmit={false}
+                        autoCorrect={false}
                     />
 
                     {!submitted ? (
