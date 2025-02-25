@@ -123,6 +123,7 @@ export default function App() {
                         returnKeyType={submitted ? 'next' : 'done'}
                         blurOnSubmit={false}
                         autoCorrect={false}
+                        autoComplete='off'
                     />
 
                     {!submitted ? (
