@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { LanguageSelector, LanguageCode } from './components/LanguageSelector';
 import { Sentence } from './constants/types';
 import { useAudioPlayer } from 'expo-audio';
@@ -156,6 +156,28 @@ export default function App() {
                     </View>
                 </View>
             )}
+
+            {/* Credits Footer */}
+            <View style={styles.creditsContainer}>
+                <Text style={styles.creditsText}>
+                    Developed by{' '}
+                    <Text
+                        style={styles.linkText}
+                        onPress={() => Linking.openURL('https://www.linkedin.com/in/furkanunluturk')}
+                    >
+                        Furkan Ünlütürk
+                    </Text>{' '}
+                    | Data from{' '}
+                    <Text
+                        style={styles.linkText}
+                        onPress={() => Linking.openURL('https://tatoeba.org')}
+                    >
+                        Tatoeba
+                    </Text>
+                    .{' '}
+                    Please consider contributing or donating to Tatoeba if you find this tool helpful.
+                </Text>
+            </View>
         </ScrollView>
     );
 }
@@ -242,5 +264,21 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         marginTop: 20,
         gap: 10,
+    },
+    creditsContainer: {
+        marginTop: 16,
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#E0E0E0', // Light gray border
+        alignItems: 'center',
+    },
+    creditsText: {
+        fontSize: 14,
+        color: '#7F8C8D',
+        lineHeight: 20,
+    },
+    linkText: {
+        color: '#4A90E2', // Primary blue
+        textDecorationLine: 'underline',
     },
 });
