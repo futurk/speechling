@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { LanguageSelector, LanguageCode } from './components/LanguageSelector';
 import { Sentence } from './constants/types';
+import { useAudioPlayer } from 'expo-audio';
 
 const diff = require('diff');
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://tatoeba.org/en/api_v0/search';
 
 export default function App() {
-    const [nativeLang, setNativeLang] = useState<LanguageCode>('tur');
-    const [targetLang, setTargetLang] = useState<LanguageCode>('eng');
+    const [targetLang, setTargetLang] = useState<LanguageCode>('deu');
+    const [nativeLang, setNativeLang] = useState<LanguageCode>('eng');
     const [sentences, setSentences] = useState<Sentence[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [userTranslation, setUserTranslation] = useState('');
@@ -20,7 +21,7 @@ export default function App() {
         setLoading(true);
         setError('');
         try {
-            const response = await fetch(`${API_URL}/search?from=${nativeLang}&to=${targetLang}&original=no&sort=random`);
+            const response = await fetch(`${API_URL}/search?from=${targetLang}&to=${nativeLang}&has_audio=yes&original=yes&sort=random`);
             const data = await response.json();
 
             if (data.results?.length > 0) {
@@ -65,7 +66,7 @@ export default function App() {
     };
 
     const differences = submitted && sentences[currentIndex].translations
-        ? diff.diffWords(userTranslation, sentences[currentIndex].translations[0][0]?.text || '', { ignoreCase: true }) // Ensure translations[0][0] exists
+        ? diff.diffWords(userTranslation, sentences[currentIndex].text || '', { ignoreCase: true }) // Ensure translations[0][0] exists
         : [];
 
     // Automatically focus on the input
@@ -74,6 +75,9 @@ export default function App() {
             this.translationInput.focus();
         }
     }, [sentences, currentIndex]);
+
+    const audioUrl = `https://tatoeba.org/audio/download/${sentences[currentIndex]?.audios[0].id}`
+    const player = useAudioPlayer(audioUrl);
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -104,9 +108,10 @@ export default function App() {
                     <Text style={styles.tracker}>
                         {currentIndex + 1} / {sentences.length}
                     </Text>
-
-                    <Text style={styles.sentence}>{sentences[currentIndex].text}</Text>
-
+                    <TouchableOpacity onPress={() => player.play()}>
+                        <Text style={styles.playButton}>Play Audio</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.sentence}>{sentences[currentIndex].translations[0][0]?.text}</Text>
                     <TextInput
                         ref={(input) => { this.translationInput = input; }}
                         style={[styles.input, styles.translationInput]}
@@ -156,6 +161,15 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+    playButton: {
+        marginBottom: 10,
+        alignSelf: 'center',
+        backgroundColor: '#007AFF',
+        padding: 10,
+        borderRadius: 5,
+        marginTop: 10,
+        color: '#fff',
+    },
     tracker: {
         fontSize: 16,
         textAlign: 'center',

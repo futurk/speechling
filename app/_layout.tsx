@@ -19,13 +19,13 @@ export default function RootLayout() {
       <Stack.Screen
         name="listen"
         options={{
-          title: title,
+          title: "Listen2Bea: Freeplay Mode",
         }}
       />
       <Stack.Screen
         name="trans"
         options={{
-          title: "Translation Practice",
+          title: "Listen2Bea: Dictation Practice",
         }}
       />
     </Stack>

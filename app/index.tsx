@@ -16,10 +16,10 @@ export default function Index() {
         <View style={styles.container}>
             <Text style={styles.title}>Welcome to Listen2Bea</Text>
             <TouchableOpacity style={styles.button} onPress={navigateToListen}>
-                <Text style={styles.buttonText}>Listening Compr. Practice</Text>
+                <Text style={styles.buttonText}>Freeplay Mode</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={navigateToTrans}>
-                <Text style={styles.buttonText}>Translation Practice</Text>
+                <Text style={styles.buttonText}>Dictation Practice</Text>
             </TouchableOpacity>
         </View>
     );
