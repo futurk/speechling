@@ -454,6 +454,10 @@ export default function App() {
           {/* Sentence Card */}
           {currentSentence.text && (
             <View style={styles.card}>
+
+
+              <Text style={styles.attributionText}>Speakers: <Text style={styles.linkText} onPress={() => Linking.openURL('http://tatoeba.org/eng/user/profile/' + currentSentence.audios[0].author)}>{currentSentence.audios[0].author}</Text> (Original) and <Text style={styles.linkText} onPress={() => Linking.openURL('http://tatoeba.org/eng/user/profile/' + translation?.audios[0].author)}>{translation?.audios[0].author}</Text> (Translation)</Text>
+
               {/* Sentence and Translation */}
               <View style={styles.sentenceContainer}>
                 {/* Audio Playing Icon */}
@@ -469,6 +473,7 @@ export default function App() {
                     <Text style={styles.translationText}>{translation.text}</Text>
                   )}
                 </ScrollView>
+
               </View>
 
               {/* Delay Controls and Toggle Container */}
@@ -718,6 +723,15 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   linkText: {
+    color: '#4A90E2', // Primary blue
+    textDecorationLine: 'underline',
+  },
+  attributionText: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    marginBottom: 10,
+  },
+  attributionLink: {
     color: '#4A90E2', // Primary blue
     textDecorationLine: 'underline',
   },

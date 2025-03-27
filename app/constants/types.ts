@@ -2,6 +2,6 @@ export interface Sentence {
     id: number;
     text: string;
     lang: string;
-    audios?: Array<{ id: number }>;
-    translations?: Array<Array<Sentence>>;
+    audios: Array<{ id: number, author: string, attribution_url: string }>;
+    translations: Array<Array<Sentence>>;
 }
