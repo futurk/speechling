@@ -130,7 +130,7 @@ export default function App() {
                         <Button title="Submit" onPress={handleSubmit} />
                     ) : (
                         <View style={styles.resultContainer}>
-                            <Text style={styles.resultHeading}>Correct Translation:</Text>
+                            <Text style={styles.resultHeading}>Correct Sentence:</Text>
                             <View style={styles.correctTranslation}>
                                 {differences.filter(part => !part.removed).map((part, i) => (
                                     <Text
