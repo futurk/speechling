@@ -4,21 +4,21 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 export default function Index() {
     const router = useRouter();
 
-    const navigateToListen = () => {
-        router.push('/listen'); // Navigate to listen.tsx
+    const navigateToFreeplay = () => {
+        router.push('/freeplay'); // Navigate to freeplay.tsx
     };
 
-    const navigateToTrans = () => {
-        router.push('/trans'); // Navigate to trans.tsx
+    const navigateToDictation = () => {
+        router.push('/dictation'); // Navigate to dictation.tsx
     };
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Welcome to Listen2Bea</Text>
-            <TouchableOpacity style={styles.button} onPress={navigateToListen}>
+            <TouchableOpacity style={styles.button} onPress={navigateToFreeplay}>
                 <Text style={styles.buttonText}>Freeplay Mode</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={navigateToTrans}>
+            <TouchableOpacity style={styles.button} onPress={navigateToDictation}>
                 <Text style={styles.buttonText}>Dictation Practice</Text>
             </TouchableOpacity>
         </View>
