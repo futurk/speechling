@@ -12,7 +12,7 @@ export default function App() {
     const [nativeLang, setNativeLang] = useState<LanguageCode>('eng');
     const [sentences, setSentences] = useState<Sentence[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [userTranslation, setUserTranslation] = useState('');
+    const [userInputText, setUserInputText] = useState('');
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -53,7 +53,7 @@ export default function App() {
         if (newIndex >= 0 && newIndex < sentences.length) {
             setCurrentIndex(newIndex);
             setSubmitted(false);
-            setUserTranslation('');
+            setUserInputText('');
         }
     };
 
@@ -66,13 +66,13 @@ export default function App() {
     };
 
     const differences = submitted && sentences[currentIndex].translations
-        ? diff.diffWords(userTranslation, sentences[currentIndex].text || '', { ignoreCase: true }) // Ensure translations[0][0] exists
+        ? diff.diffWords(userInputText, sentences[currentIndex].text || '', { ignoreCase: true }) // Ensure translations[0][0] exists
         : [];
 
     // Automatically focus on the input
     useEffect(() => {
         if (currentIndex < sentences.length - 1) {
-            this.translationInput.focus();
+            this.userInput.focus();
         }
     }, [sentences, currentIndex]);
 
@@ -113,11 +113,11 @@ export default function App() {
                     </TouchableOpacity>
                     <Text style={styles.sentence}>{sentences[currentIndex].translations[0][0]?.text}</Text>
                     <TextInput
-                        ref={(input) => { this.translationInput = input; }}
-                        style={[styles.input, styles.translationInput]}
-                        placeholder="Enter your translation"
-                        value={userTranslation}
-                        onChangeText={setUserTranslation}
+                        ref={(input) => { this.userInput = input; }}
+                        style={[styles.input, styles.userInput]}
+                        placeholder="Type your best"
+                        value={userInputText}
+                        onChangeText={setUserInputText}
                         editable={!submitted}
                         onSubmitEditing={handleEnterPress}
                         returnKeyType={submitted ? 'next' : 'done'}
@@ -131,7 +131,7 @@ export default function App() {
                     ) : (
                         <View style={styles.resultContainer}>
                             <Text style={styles.resultHeading}>Correct Sentence:</Text>
-                            <View style={styles.correctTranslation}>
+                            <View style={styles.correctSentence}>
                                 {differences.filter(part => !part.removed).map((part, i) => (
                                     <Text
                                         key={i}
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         fontSize: 16,
     },
-    translationInput: {
+    userInput: {
         minHeight: 100,
         textAlignVertical: 'top',
     },
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         color: '#444',
     },
-    correctTranslation: {
+    correctSentence: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         backgroundColor: '#f8f8f8',
