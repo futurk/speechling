@@ -16,6 +16,7 @@ export default function App() {
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [showTranslation, setShowTranslation] = useState(false);
 
     const fetchSentences = async () => {
         setLoading(true);
@@ -34,6 +35,7 @@ export default function App() {
                 } else {
                     setSentences(validSentences);
                     setCurrentIndex(0);
+                    setShowTranslation(false);
                 }
             } else {
                 setError('No sentences found');
@@ -54,6 +56,7 @@ export default function App() {
             setCurrentIndex(newIndex);
             setSubmitted(false);
             setUserInputText('');
+            setShowTranslation(false);
         }
     };
 
@@ -66,52 +69,84 @@ export default function App() {
     };
 
     const differences = submitted && sentences[currentIndex].translations
-        ? diff.diffWords(userInputText, sentences[currentIndex].text || '', { ignoreCase: true }) // Ensure translations[0][0] exists
+        ? diff.diffWords(userInputText, sentences[currentIndex].text || '', { ignoreCase: true })
         : [];
 
-    // Automatically focus on the input
     useEffect(() => {
         if (currentIndex < sentences.length - 1) {
             this.userInput.focus();
         }
     }, [sentences, currentIndex]);
 
-    const audioUrl = `https://tatoeba.org/audio/download/${sentences[currentIndex]?.audios[0].id}`
+    const audioUrl = `https://tatoeba.org/audio/download/${sentences[currentIndex]?.audios[0].id}`;
     const player = useAudioPlayer(audioUrl);
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            {/* Language Selectors */}
-            <View style={styles.languageSelector}>
-                <LanguageSelector
-                    selectedValue={targetLang}
-                    onValueChange={setTargetLang}
-                    label="Target"
+            <View>
+                <View style={styles.languageSelector}>
+                    <LanguageSelector
+                        selectedValue={targetLang}
+                        onValueChange={setTargetLang}
+                        label="Target"
+                    />
+                    <LanguageSelector
+                        selectedValue={nativeLang}
+                        onValueChange={setNativeLang}
+                        label="Native"
+                    />
+                </View>
+
+                <Button
+                    title={loading ? 'Loading...' : 'Load Sentences'}
+                    onPress={fetchSentences}
+                    disabled={loading}
                 />
-                <LanguageSelector
-                    selectedValue={nativeLang}
-                    onValueChange={setNativeLang}
-                    label="Native"
-                />
+
+                {error ? <Text style={styles.error}>{error}</Text> : null}
+
             </View>
-
-            <Button
-                title={loading ? 'Loading...' : 'Load Sentences'}
-                onPress={fetchSentences}
-                disabled={loading}
-            />
-
-            {error ? <Text style={styles.error}>{error}</Text> : null}
 
             {sentences.length > 0 && (
                 <View style={styles.exerciseContainer}>
-                    <Text style={styles.tracker}>
-                        {currentIndex + 1} / {sentences.length}
-                    </Text>
-                    <TouchableOpacity onPress={() => player.play()}>
-                        <Text style={styles.playButton}>Play Audio</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.sentence}>{sentences[currentIndex].translations[0][0]?.text}</Text>
+
+                    <View style={styles.navigation}>
+                        <Button
+                            title="Previous"
+                            onPress={() => navigateSentence('prev')}
+                            disabled={currentIndex === 0}
+                        />
+                        <Text style={styles.tracker}>
+                            {currentIndex + 1} / {sentences.length}
+                        </Text>
+                        <Button
+                            title="Next"
+                            onPress={() => navigateSentence('next')}
+                            disabled={currentIndex === sentences.length - 1}
+                        />
+                    </View>
+
+
+                    <View style={styles.audioContainer}>
+                        <TouchableOpacity
+                            style={[styles.button]}
+                            onPress={() => player.play()}
+                        >
+                            <Text style={styles.buttonText}>Play Audio</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.button}
+                            onPress={() => setShowTranslation(!showTranslation)}
+                        >
+                            <Text style={styles.buttonText}>{showTranslation ? "Hide Translation" : "Show Translation"}</Text>
+                        </TouchableOpacity>
+
+                        {showTranslation && (
+                            <Text style={styles.translationText}>{sentences[currentIndex].translations[0][0]?.text}</Text>
+                        )}
+                    </View>
+
                     <TextInput
                         ref={(input) => { this.userInput = input; }}
                         style={[styles.input, styles.userInput]}
@@ -141,25 +176,16 @@ export default function App() {
                                     </Text>
                                 ))}
                             </View>
+                            <Button
+                                title="Go To Next Sentence"
+                                onPress={() => navigateSentence('next')}
+                                disabled={currentIndex === sentences.length - 1}
+                            />
                         </View>
                     )}
-
-                    <View style={styles.navigation}>
-                        <Button
-                            title="Previous"
-                            onPress={() => navigateSentence('prev')}
-                            disabled={currentIndex === 0}
-                        />
-                        <Button
-                            title="Next"
-                            onPress={() => navigateSentence('next')}
-                            disabled={currentIndex === sentences.length - 1}
-                        />
-                    </View>
                 </View>
             )}
 
-            {/* Credits Footer */}
             <View style={styles.creditsContainer}>
                 <Text style={styles.creditsText}>
                     Developed by{' '}
@@ -185,37 +211,46 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-    playButton: {
-        marginBottom: 10,
-        alignSelf: 'center',
-        backgroundColor: '#007AFF',
-        padding: 10,
-        borderRadius: 5,
-        marginTop: 10,
-        color: '#fff',
-    },
-    tracker: {
-        fontSize: 16,
-        textAlign: 'center',
-        marginBottom: 10,
-        color: '#666',
-    },
-    languageSelector: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 16,
-    },
     container: {
         flexGrow: 1,
         padding: 20,
         backgroundColor: '#fff',
+    },
+    languageSelector: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 24, // Increased margin to create more space
+    },
+    tracker: {
+        fontSize: 16,
+        textAlign: 'center',
+        color: '#666',
+    },
+    audioContainer: {
+        marginBottom: 20,
+        alignItems: 'center',
+    },
+    button: {
+        backgroundColor: '#007AFF',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 5,
+        marginTop: 10,
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 16,
+        textAlign: 'center',
+    },
+    buttonSpacing: {
+        marginBottom: 10,
     },
     input: {
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 8,
         padding: 12,
-        marginBottom: 10,
+        marginBottom: 20, // Increased margin for better separation from other elements
         fontSize: 16,
     },
     userInput: {
@@ -230,9 +265,9 @@ const styles = StyleSheet.create({
     exerciseContainer: {
         marginTop: 20,
     },
-    sentence: {
+    translationText: {
         fontSize: 18,
-        marginBottom: 20,
+        marginTop: 10,
         lineHeight: 24,
         color: '#333',
     },
@@ -251,6 +286,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#f8f8f8',
         borderRadius: 8,
         padding: 12,
+        marginBottom: 20, // Ensure spacing below for any subsequent components
     },
     normalText: {
         fontSize: 16,
@@ -264,11 +300,11 @@ const styles = StyleSheet.create({
     navigation: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: 20,
-        gap: 10,
+        marginBottom: 10,
+        alignItems: 'center', // Center align text/buttons
     },
     creditsContainer: {
-        marginTop: 16,
+        marginTop: 24, // Increased margin for more spacing
         paddingTop: 16,
         borderTopWidth: 1,
         borderTopColor: '#E0E0E0', // Light gray border
@@ -278,6 +314,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#7F8C8D',
         lineHeight: 20,
+        textAlign: 'center', // Center the text for readability
     },
     linkText: {
         color: '#4A90E2', // Primary blue
