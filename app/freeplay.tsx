@@ -456,7 +456,7 @@ export default function App() {
             <View style={styles.card}>
 
 
-              <Text style={styles.attributionText}>Speakers: <Text style={styles.linkText} onPress={() => Linking.openURL('http://tatoeba.org/eng/user/profile/' + currentSentence.audios[0].author)}>{currentSentence.audios[0].author}</Text> (Original) and <Text style={styles.linkText} onPress={() => Linking.openURL('http://tatoeba.org/eng/user/profile/' + translation?.audios[0].author)}>{translation?.audios[0].author}</Text> (Translation)</Text>
+              <Text style={styles.attributionText}>Current speakers: <Text style={styles.linkText} onPress={() => Linking.openURL('http://tatoeba.org/eng/user/profile/' + currentSentence.audios[0].author)}>{currentSentence.audios[0].author}</Text> (Original) and <Text style={styles.linkText} onPress={() => Linking.openURL('http://tatoeba.org/eng/user/profile/' + translation?.audios[0].author)}>{translation?.audios[0].author}</Text> (Translation)</Text>
 
               {/* Sentence and Translation */}
               <View style={styles.sentenceContainer}>
